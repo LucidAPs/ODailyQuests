@@ -1,0 +1,17 @@
+package com.lucidaps.odailyquests.events.listeners.global;
+
+import com.lucidaps.odailyquests.ODailyQuests;
+
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.metadata.FixedMetadataValue;
+
+public class PlayerDeathListener implements Listener {
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        event.getEntity().setMetadata("odailyquests:dead", new FixedMetadataValue(ODailyQuests.INSTANCE, true));
+    }
+}

@@ -1,31 +1,36 @@
 # ODailyQuests
 
-<img width="805" height="187" alt="image" src="https://github.com/user-attachments/assets/ecffe00c-7d0f-4b0b-a319-b428aae32f1e" />
+ODailyQuests is a daily quests plugin for Minecraft servers. Players receive configurable random quests and rewards designed to encourage regular participation.
 
-### Dynamize your server & increase player retention !
+> [!IMPORTANT]
+> This repository is a maintained fork of [Ordwen/ODailyQuests](https://github.com/Ordwen/ODailyQuests), which was archived on April 30, 2026. The fork is based on upstream commit [`19dba325`](https://github.com/Ordwen/ODailyQuests/commit/19dba325e9bd1fbfe50f4f9737cdff0d8f52dce8). The original project was created by Ordwen; this continuation is maintained by LucidAPs.
 
-O'DailyQuests is a powerful and easy-to-use **daily quests plugin** for Minecraft.
-Every day, players receive new **random quests** to complete, each rewarding them with customizable prizes.
-Perfect for increasing player engagement and server retention!
+## Requirements
 
-## 📖 Documentation
-[Read the full Wiki](<https://ordwenplugins.gitbook.io/odailyquests/>) for setup, configuration, and examples.
+- Paper 26.2 or a compatible server implementation
+- Java 25
+- Maven 3.9 or newer when building from source
 
-## 💬 Community
-Need help or want to share feedback? [Join our Discord](<https://discord.gg/Q8sw5KFvqg](https://discord.com/invite/NPAUE7kTgJ>).
+## Documentation and support
 
-## 🔗 Downloads
-- 📥 **Spigot resource page**: [O'DailyQuests on SpigotMC](<https://www.spigotmc.org/resources/odailyquests-daily-quests-plugin-1-16-1-19.100990/>)
-- 📥 **Modrinth resource page**: [O'DailyQuests on Modrinth](<https://modrinth.com/plugin/odailyquests>)
-- 🧩 **Addons**:
-  - [PyroFishingPro Support](<https://github.com/Ordwen/ODQ-PyroFishingPro/releases>)
+The [upstream documentation](https://ordwenplugins.gitbook.io/odailyquests/) remains a useful reference for compatible configuration and quest types. Some behavior in this fork may differ from the archived version.
 
-## ☕ Support the project
-If you enjoy O'DailyQuests and want to support future development, you can:
+Use [GitHub Issues](https://github.com/LucidAPs/ODailyQuests/issues) to report a problem or propose an improvement to this fork.
 
-- [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/I2I41CRIJI)  
-- [![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?logo=paypal&style=flat-square)](https://www.paypal.com/paypalme/ordwen)  
+## Building
 
-⭐ Don’t forget to **leave a 5-star review on [SpigotMC](https://www.spigotmc.org/resources/odailyquests-daily-quests-plugin-1-16-1-19.100990/reviews/)** — it really helps the project grow!
+```bash
+mvn clean package
+```
 
+The compiled plugin JAR is generated in `target/`. To override the project version, pass the `revision` property:
 
+```bash
+mvn -Drevision=4.0-SNAPSHOT clean package
+```
+
+This fork does not currently publish official binary releases. Build from source until a server-tested release is announced.
+
+## License and attribution
+
+ODailyQuests is distributed under the [GNU General Public License v3.0](LICENSE). See [NOTICE.md](NOTICE.md) for the upstream attribution and modification notice.

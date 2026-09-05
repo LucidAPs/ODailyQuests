@@ -1,0 +1,49 @@
+package com.lucidaps.odailyquests.quests.types.item;
+
+import com.lucidaps.odailyquests.quests.player.progression.Progression;
+import com.lucidaps.odailyquests.quests.types.shared.BasicQuest;
+import com.lucidaps.odailyquests.quests.types.shared.ItemQuest;
+import org.bukkit.Material;
+import org.bukkit.event.Event;
+import org.bukkit.event.entity.EntityResurrectEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
+
+public class ConsumeQuest extends ItemQuest {
+
+    public ConsumeQuest(BasicQuest base) {
+        super(base);
+    }
+
+    @Override
+    public String getType() {
+        return "CONSUME";
+    }
+
+    @Override
+    public boolean canProgress(Event provided, Progression progression) {
+        if (provided instanceof PlayerItemConsumeEvent event) {
+            return super.isRequiredItem(event.getItem(), progression);
+        }
+
+        if (provided instanceof EntityResurrectEvent event) {
+            final EntityEquipment equipment = event.getEntity().getEquipment();
+
+            if (equipment != null) {
+                final ItemStack mainHand = equipment.getItemInMainHand();
+                final ItemStack offHand = equipment.getItemInOffHand();
+
+                if (mainHand.getType() == Material.TOTEM_OF_UNDYING) {
+                    return super.isRequiredItem(mainHand, progression);
+                }
+
+                if (offHand.getType() == Material.TOTEM_OF_UNDYING) {
+                    return super.isRequiredItem(offHand, progression);
+                }
+            }
+        }
+
+        return false;
+    }
+}

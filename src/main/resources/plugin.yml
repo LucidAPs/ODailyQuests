@@ -1,18 +1,19 @@
 name: "ODailyQuests"
-version: '${version}'
-main: com.ordwen.odailyquests.ODailyQuests
-api-version: 1.18
+version: '${project.version}'
+main: com.lucidaps.odailyquests.ODailyQuests
+api-version: '26.2'
 prefix: "O'DailyQuests"
-authors: [ Ordwen ]
+authors: [ Ordwen, LucidAPs ]
 description: Add more objectives and dynamize your server !
-website: https://modrinth.com/plugin/odailyquests
-softdepend: [ Vault, TokenManager, Citizens, FancyNpcs, PlaceholderAPI, PlayerPoints, MythicMobs, EliteMobs, WildStacker, RoseStacker, Multiverse-Core, MyWorlds, HeadDatabase, Oraxen, ItemsAdder, Nexo, CoinsEngine, Towny, PyroFishingPro, Votifier, NuVotifier, KGenerators, CustomCrops, CustomFishing, EvenMoreFish, eco, ExcellentCrates, MMOItems, MMOCore, PlotSquared, EvenMoreFish ]
+website: https://github.com/LucidAPs/ODailyQuests
+softdepend: [ Vault, Citizens, PlaceholderAPI, PlayerPoints, HeadDatabase, Nexo, VotifierPlus, eco ]
 
 libraries:
   - com.zaxxer:HikariCP:5.0.1
   - org.xerial:sqlite-jdbc:3.49.1.0
   - com.jeff-media:custom-block-data:2.2.5
   - com.h2database:h2:2.1.214
+  - com.mysql:mysql-connector-j:9.4.0
 
 commands:
   dquests:
@@ -45,5 +46,3 @@ permissions:
   odailyquests.reroll:
     description: "Allows the player to reroll quests"
     default: op
-
-folia-supported: true

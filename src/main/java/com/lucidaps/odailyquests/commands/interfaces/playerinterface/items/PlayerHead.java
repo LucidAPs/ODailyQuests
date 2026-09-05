@@ -1,0 +1,131 @@
+package com.lucidaps.odailyquests.commands.interfaces.playerinterface.items;
+
+import com.lucidaps.odailyquests.quests.player.QuestsManager;
+
+import com.lucidaps.odailyquests.commands.interfaces.playerinterface.items.getters.InterfaceItemGetter;
+import com.lucidaps.odailyquests.files.implementations.PlayerInterfaceFile;
+import com.lucidaps.odailyquests.nms.NMSHandler;
+import com.lucidaps.odailyquests.quests.player.PlayerQuests;
+import com.lucidaps.odailyquests.tools.TextFormatter;
+import com.lucidaps.odailyquests.tools.PluginLogger;
+import com.lucidaps.odailyquests.tools.QuestPlaceholders;
+import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class PlayerHead extends InterfaceItemGetter {
+
+    private static final String SLOT_PARAMETER = "slot";
+
+    private final PlayerInterfaceFile playerInterfaceFile;
+
+    private boolean enabled;
+    private final Set<Integer> slots = new HashSet<>();
+
+    private ItemStack head;
+    private SkullMeta meta;
+
+    public PlayerHead(PlayerInterfaceFile playerInterfaceFile) {
+        this.playerInterfaceFile = playerInterfaceFile;
+    }
+
+    /**
+     * Init player head.
+     */
+    public void load() {
+        final ConfigurationSection section = playerInterfaceFile.getConfig().getConfigurationSection("player_interface.player_head");
+        if (section == null) {
+            PluginLogger.error("Player head section not found in the player interface file.");
+            enabled = false;
+            return;
+        }
+
+        enabled = section.getBoolean(".enabled");
+        if (!enabled) return;
+
+        if (section.isString(".material")) {
+            final String material = section.getString(".material");
+            if (material != null) {
+                head = this.getItem(material, "player_head", ".material");
+            }
+        }
+
+        if (head == null) {
+            head = new ItemStack(Material.PLAYER_HEAD, 1);
+        }
+
+        meta = (SkullMeta) head.getItemMeta();
+        if (meta == null) {
+            return;
+        }
+
+        meta.setDisplayName(TextFormatter.format(section.getString(".item_name")));
+        meta.setLore(section.getStringList(".item_description"));
+
+        if (section.isInt(".custom_model_data")) {
+            meta.setCustomModelData(section.getInt(".custom_model_data"));
+        }
+
+        if (section.isString(".item_model")) {
+            final String itemModel = section.getString(".item_model");
+            if (itemModel != null) {
+                NMSHandler.trySetItemModel(meta, itemModel);
+            }
+        }
+
+        slots.clear();
+        if (section.isList(SLOT_PARAMETER)) {
+            slots.addAll(section.getIntegerList(SLOT_PARAMETER));
+        } else {
+            slots.add(section.getInt(SLOT_PARAMETER) - 1);
+        }
+    }
+
+    public Inventory setPlayerHead(Inventory inventory, Player player, int size) {
+        if (!enabled) return inventory;
+
+        for (int slot : slots) {
+            if (slot >= 0 && slot <= size) {
+                inventory.setItem(slot, getPlayerHead(player));
+            } else {
+                PluginLogger.error("An error occurred when loading the player interface.");
+                PluginLogger.error("The slot defined for the player head is out of bounds.");
+            }
+        }
+
+        return inventory;
+    }
+
+    public ItemStack getPlayerHead(Player player) {
+        final SkullMeta clone = this.meta.clone();
+        clone.setDisplayName(TextFormatter.format(player, clone.getDisplayName()
+                .replace("%player_name%", player.getName())));
+
+        clone.setOwningPlayer(player);
+        final List<String> lore = clone.getLore();
+        if (lore == null) return head;
+
+        for (String string : lore) {
+            int index = lore.indexOf(string);
+            string = TextFormatter.format(player, string);
+
+            final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(player.getName());
+            lore.set(index, QuestPlaceholders.replaceQuestPlaceholders(TextFormatter.format(string), player, null, null, playerQuests, null));
+        }
+
+        clone.setLore(lore);
+        head.setItemMeta(clone);
+        return head;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+}

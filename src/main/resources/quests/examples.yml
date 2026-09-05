@@ -24,7 +24,6 @@
 # ==============================================================
 # More tips available on Wiki :
 # https://ordwenplugins.gitbook.io/odailyquests/
-# Need help ? https://discord.com/invite/NPAUE7kTgJ
 # For more affected objects or types, please make suggestion.
 # ==============================================================
 quests:
@@ -336,7 +335,7 @@ quests:
     quest_type: GET
     required: POTION
     potion:
-      type: SPEED
+      type: SWIFTNESS
       upgraded: true
       extended: false
     required_amount: 1
@@ -366,7 +365,7 @@ quests:
       - SPLASH_POTION
       - LINGERING_POTION
     potion:
-      type: SPEED
+      type: SWIFTNESS
       upgraded: false
       extended: true
     required_amount: 1
@@ -401,53 +400,6 @@ quests:
 # ===========================================================
 # QUESTS RELATED TO PLUGINS
 # ===========================================================
-
-  # example quest that is using the MYTHIC_MOBS quest type with a mob from MythicMobs
-  # more info here -> https://ordwenplugins.gitbook.io/odailyquests/~/changes/65/quests/available-types/other-plugin-types#mythicmobs-specificities
-  16:
-    name: "&3The Big Boss Of Skeletons"
-    menu_item: WITHER_SKELETON_SKULL
-    description:
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Kill The Skeleton King"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: MYTHIC_MOBS
-    entity_name: "SkeletonKing"
-    shared_mods: true
-    required_amount: 1
-    reward:
-      reward_type: MONEY
-      amount: 250
-
-  # example quest that is using the ELITE_MOBS quest type with a mob from EliteMobs
-  # more info here -> https://ordwenplugins.gitbook.io/odailyquests/~/changes/65/quests/available-types/other-plugin-types#elitemobs-specificities
-  17:
-    name: "&3The Big Boss"
-    menu_item: SKELETON_SKULL
-    description:
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Kill The Big Boss"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: ELITE_MOBS
-    entity_name: "&cThe Big Boss"
-    required_amount: 1
-    reward:
-      reward_type: MONEY
-      amount: 250
 
   # example quest that is using Vault placeholders
   18:
@@ -503,54 +455,6 @@ quests:
       commands:
         - "bc &6%player% &bis now a VIP!"
 
-  # example quest that is using ItemsAdder
-  # make sure use_itemsadder is set to true in config.yml
-  20:
-    name: "&3Get some Thanos dust"
-    menu_item: "itemsadder:thanos_namespace:thanos_dust"
-    description:
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Get some Thanos dust"
-      - " &8(&7!&8) &7Click on quest once you have the item"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: GET
-    required: "itemsadder:thanos_namespace:thanos_dust"
-    required_amount: 1
-    reward:
-      reward_type: MONEY
-      amount: 250
-
-  # example quest that is using Oraxen
-  # make sure use_oraxen is set to true in config.yml
-  21:
-    name: "&3Get some Thanos dust"
-    menu_item: "oraxen:thanos_dust"
-    description:
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Get some Thanos dust"
-      - " &8(&7!&8) &7Click on quest once you have the item"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: GET
-    required: "oraxen:thanos_dust"
-    required_amount: 1
-    reward:
-      reward_type: MONEY
-      amount: 250
-
   # example quest that is using Nexo
   # make sure use_nexo is set to true in config.yml
   22:
@@ -570,29 +474,6 @@ quests:
       - ""
     quest_type: GET
     required: "nexo:thanos_dust"
-    required_amount: 1
-    reward:
-      reward_type: MONEY
-      amount: 250
-
-  # example quest that is using MMOItems
-  23:
-    name: "&3Get some Thanos dust"
-    menu_item: "mmoitems:thanos_category:thanos_dust"
-    description:
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Get some Thanos dust"
-      - " &8(&7!&8) &7Click on quest once you have the item"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: GET
-    required: "mmoitems:thanos_category:thanos_dust"
     required_amount: 1
     reward:
       reward_type: MONEY
@@ -667,33 +548,6 @@ quests:
     required_amount: 32
     reward:
       reward_type: MONEY
-      amount: 250
-
-  # example quest that is using the CoinsEngine reward type
-  27:
-    name: "&3Don't mine at night"
-    menu_item: STONE_PICKAXE
-    achieved_menu_item: "customhead:b5a3b49beec3ab23ae0b60dab56e9cc8fa16769a25830b5d8d6c46378f54430" # checkmark head
-    description:
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Mine %required% stone"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: BREAK
-    required: 
-      - STONE
-      - COBBLESTONE
-    required_amount: 32
-    reward:
-      reward_type: COINS_ENGINE
-      currency_label: "quests_coins" # name from the CoinsEngine configuration file
-      currency_display_name: "&6&lQuests Coins" # name that will be used in the reward message to the player
       amount: 250
 
   # example quest that is using required_permission parameter
@@ -840,123 +694,3 @@ quests:
     reward:
       reward_type: MONEY
       amount: "50-100"
-
-  # -----Plugin Examples-----
-  # MythicMobs, more info here -> https://ordwenplugins.gitbook.io/odailyquests/quests/available-types/other-plugin-types#mythicmobs-specificities
-  34:
-    name: "Too many zombies"
-    menu_item: WITHER_SKELETON_SKULL
-    description:
-      - " &7ᴅɪꜰꜰɪᴄᴜʟᴛʏ: &aᴇᴀꜱʏ"
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Kill The Skeleton King"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: MYTHIC_MOBS
-    entity_name: "SkeletonKing"
-    shared_mods: true
-    required_amount: 1
-    reward:
-      reward_type: MONEY
-      amount: 250
-
-  #EliteMobs, more info here -> https://ordwenplugins.gitbook.io/odailyquests/quests/available-types/other-plugin-types#elitemobs-specificities
-  35:
-    name: "Too many zombies"
-    menu_item: CREEPER_SPAWN_EGG
-    description:
-      - " &7ᴅɪꜰꜰɪᴄᴜʟᴛʏ: &aᴇᴀꜱʏ"
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Kill The Big Boss"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: ELITE_MOBS
-    entity_name: "&cThe Big Boss"
-    required_amount: 1
-    reward:
-      reward_type: MONEY
-      amount: 250
-
-  #VotingPlugin, more info here -> https://ordwenplugins.gitbook.io/odailyquests/quests/available-types#other-plugin-types
-  36:
-    name: "Too many zombies"
-    menu_item: TRIPWIRE_HOOK
-    description:
-      - " &7ᴅɪꜰꜰɪᴄᴜʟᴛʏ: &aᴇᴀꜱʏ"
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Vote %required%x for our server"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: NU_VOTIFIER
-    required_amount: 3
-    reward:
-      reward_type: MONEY
-      amount: 250
-
-  #PyroFishing, more info here -> https://ordwenplugins.gitbook.io/odailyquests/quests/available-types/other-plugin-types#pyro_fish
-  # /!\ Requires the associated (free) addon! -> https://github.com/Ordwen/ODQ-PyroFishingPro/releases
-  37:
-    name: "Custom fishes baby"
-    menu_item: COD
-    description:
-      - " &7ᴅɪꜰꜰɪᴄᴜʟᴛʏ: &aᴇᴀꜱʏ"
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Fish %required% custom fishes"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: PYRO_FISH
-    required:
-      - "bronze:1"  #"<category>:<id>"
-      - "silver:51"
-    required_amount: 1
-    reward:
-      reward_type: MONEY
-      amount: 250
-
-  #EvenMoreFish, more info here -> https://ordwenplugins.gitbook.io/odailyquests/quests/available-types/other-plugin-types#emf_fish
-  38:
-    name: "Custom fishes baby 2"
-    menu_item: COD
-    description:
-      - ""
-      - "&3Task:"
-      - " &3&l| &7Fish %required% custom fishes"
-      - ""
-      - "&3Progress:"
-      - " &3&l| %status%"
-      - ""
-      - "&3Reward:"
-      - " &3&l| &7250$"
-      - ""
-    quest_type: EMF_FISH
-    required:
-      - "Grass Carp"
-      - "Rockfish"
-    required_amount: 1
-    reward:
-      reward_type: MONEY
-      amount: 250

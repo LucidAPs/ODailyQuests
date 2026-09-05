@@ -12,11 +12,11 @@ A clear and concise description of what the bug is.
 
 **Plugin version**
 What version of ODailyQuests are you using. 
-Ex: ODailyQuests-2.3.0
+Ex: ODailyQuests-4.0
 
 **Server software & version**
 What software are you using, which build, and which Minecraft version.
-Ex: paper-1.21.4-133
+Ex: paper-26.2-116
 
 **To Reproduce**
 Steps to reproduce the behavior:

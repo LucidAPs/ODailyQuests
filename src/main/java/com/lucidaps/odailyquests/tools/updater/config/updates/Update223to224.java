@@ -1,0 +1,21 @@
+package com.lucidaps.odailyquests.tools.updater.config.updates;
+
+import com.lucidaps.odailyquests.ODailyQuests;
+import com.lucidaps.odailyquests.tools.updater.config.ConfigUpdater;
+
+public class Update223to224 extends ConfigUpdater {
+
+    public Update223to224(ODailyQuests plugin) {
+        super(plugin);
+    }
+
+    @Override
+    public void apply(ODailyQuests plugin, String version) {
+        setDefaultConfigItem("use_custom_furnace_results", false, config, configFile, false);
+        setDefaultConfigItem("disable_logs", false, config, configFile, false);
+
+        setDefaultConfigItem("player_interface.disable_status", false, playerInterface, playerInterfaceFile, false);
+
+        updateVersion(version);
+    }
+}

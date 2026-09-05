@@ -1,0 +1,64 @@
+package com.lucidaps.odailyquests.configuration.essentials;
+
+import com.lucidaps.odailyquests.ODailyQuests;
+import com.lucidaps.odailyquests.configuration.ConfigFactory;
+import com.lucidaps.odailyquests.configuration.IConfigurable;
+import com.lucidaps.odailyquests.files.implementations.ConfigurationFile;
+import com.lucidaps.odailyquests.tools.PluginLogger;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Date;
+
+public class Debugger implements IConfigurable {
+
+    private final ConfigurationFile configurationFile;
+    private boolean debugMode;
+    private File debugFile;
+
+    public Debugger(ConfigurationFile configurationFile) {
+        this.configurationFile = configurationFile;
+    }
+
+    @Override
+    public void load() {
+        debugMode = configurationFile.getConfig().getBoolean("debug");
+        if (debugMode) {
+            loadDebugFile();
+            PluginLogger.warn("Debug mode is enabled. This may cause performance issues.");
+        }
+    }
+
+    public void loadDebugFile() {
+        debugFile = new File(ODailyQuests.INSTANCE.getDataFolder(), "debug.yml");
+
+        if (!debugFile.exists()) {
+            ODailyQuests.INSTANCE.saveResource("debug.yml", false);
+            PluginLogger.info("Debug file created (YAML).");
+        }
+    }
+
+    public void writeInternal(String debugMessage) {
+        if (debugMode) {
+            final Date date = new Date();
+
+            try (FileWriter writer = new FileWriter(debugFile, true)) {
+                writer.write("[" + date + "] " + debugMessage);
+                writer.write(System.lineSeparator());
+            } catch (IOException e) {
+                PluginLogger.error("An error happened on the write of the debug file.");
+                PluginLogger.error("If the problem persists, contact the developer.");
+                PluginLogger.error(e.getMessage());
+            }
+        }
+    }
+
+    private static Debugger getInstance() {
+        return ConfigFactory.getConfig(Debugger.class);
+    }
+
+    public static void write(String debugMessage) {
+        getInstance().writeInternal(debugMessage);
+    }
+}
