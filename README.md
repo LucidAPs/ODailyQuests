@@ -26,7 +26,7 @@ mvn clean package
 The compiled plugin JAR is generated in `target/`. To override the project version, pass the `revision` property:
 
 ```bash
-mvn -Drevision=4.0-SNAPSHOT clean package
+mvn -Drevision=4.1-SNAPSHOT clean package
 ```
 
 This fork does not currently publish official binary releases. Build from source until a server-tested release is announced.
