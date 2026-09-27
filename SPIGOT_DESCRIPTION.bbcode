@@ -1,0 +1,263 @@
+[CENTER]
+[SIZE=7][B][COLOR=#F5A623]O'DAILYQUESTS[/COLOR][/B][/SIZE]
+[SIZE=5][B][COLOR=#55AAFF]CONTINUED[/COLOR][/B][/SIZE]
+
+[SIZE=4]⚡ Daily, Weekly, and Monthly quests — active together, fully independent. ⚡[/SIZE]
+
+[B][COLOR=#FF5555]PAPER 26.2 • JAVA 25[/COLOR][/B]
+
+[URL='https://github.com/LucidAPs/ODailyQuests'][B]SOURCE CODE[/B][/URL]  •  [URL='https://github.com/LucidAPs/ODailyQuests/issues'][B]ISSUE TRACKER[/B][/URL]  •  [URL='https://ordwenplugins.gitbook.io/odailyquests/'][B]WIKI[/B][/URL]
+[/CENTER]
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#F5A623]OVERVIEW[/COLOR][/B][/SIZE][/CENTER]
+
+O'DailyQuests is a powerful, highly configurable quest system for survival, RPG, and network servers. Give every player short-term objectives, longer weekly challenges, and meaningful monthly goals — all from one plugin.
+
+Run [B]Daily[/B], [B]Weekly[/B], and [B]Monthly[/B] quests at the same time, or enable only the periods that fit your server. Each period is a complete quest system of its own, with separate quest pools, progress, reset schedules, rerolls, quest counts, and rewards.
+
+For example, you can give players [B]3 Daily quests[/B], [B]8 Weekly quests[/B], and [B]4 Monthly quests[/B] simultaneously. Completing or resetting one period never affects another.
+
+This resource is an independently maintained [B]GPL-3.0 continuation[/B] of [URL='https://github.com/Ordwen/ODailyQuests']Ordwen's archived ODailyQuests[/URL]. The original plugin and design were created by Ordwen. Version 4.5 is maintained by LucidAPs for modern Paper servers.
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#55FFAA] DAILY • WEEKLY • MONTHLY [/COLOR][/B][/SIZE]
+[SIZE=4][B]Three independent quest periods in one familiar system[/B][/SIZE][/CENTER]
+
+Every period has its own:
+
+✅ Easy, Medium, Hard, Global, and custom quest pools
+✅ Configurable number of active quests per category
+✅ Player progress and active quest selection
+✅ Reset timer and schedule
+✅ Reroll allowance and reroll history
+✅ Category-completion rewards
+✅ All-quests-completed reward
+✅ Lifetime completed-quest total
+
+[B][COLOR=#55AAFF]INDEPENDENT RESET SCHEDULES[/COLOR][/B]
+
+✅ Daily — Choose the reset time and timezone
+✅ Weekly — Choose the weekday, reset time, and timezone
+✅ Monthly — Choose the day of the month, reset time, and timezone
+✅ Supports global scheduled resets and player-relative renewal mode
+✅ Short months automatically use their final valid day
+
+[B][COLOR=#55AAFF]SEPARATE QUEST FILES[/COLOR][/B]
+
+[CODE]plugins/ODailyQuests/quests/
+├── easy.yml
+├── medium.yml
+├── hard.yml
+├── global.yml
+├── weekly/
+│   ├── easy.yml
+│   ├── medium.yml
+│   ├── hard.yml
+│   └── global.yml
+└── monthly/
+    ├── easy.yml
+    ├── medium.yml
+    ├── hard.yml
+    └── global.yml[/CODE]
+
+Daily Easy and Weekly Easy are completely different pools. The same separation applies to every category, including Global quests.
+
+[B]Global quest behavior has not changed.[/B] Each period simply loads Global quests from its own folder, so Daily Global, Weekly Global, and Monthly Global remain fully independent.
+
+Existing installations keep their current filenames. Servers using [B]easyQuests.yml[/B], [B]mediumQuests.yml[/B], [B]hardQuests.yml[/B], and [B]globalQuests.yml[/B] receive the same naming convention in the new period folders without renaming their files.
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#55AAFF]✨ KEY FEATURES ✨[/COLOR][/B][/SIZE][/CENTER]
+
+✅ Enable Daily, Weekly, and Monthly quests in any combination
+✅ YAML, SQLite, or MySQL storage with UUID-based player tracking
+✅ Easy, Medium, Hard, Global, and fully custom quest categories
+✅ More than 20 built-in quest types with dynamic and random objectives
+✅ Per-period quest counts, progress, rerolls, timers, and rewards
+✅ Per-quest, per-category, all-completed, and lifetime milestone rewards
+✅ Conditional and permission-based quests
+✅ World, region, and category restrictions
+✅ Anti-abuse checks for placed, broken, and dropped items
+✅ Titles, subtitles, toasts, boss bars, action bars, chat feedback, and progress bars
+✅ Period-aware player GUI with configurable Daily, Weekly, and Monthly navigation
+✅ Custom heads, PlaceholderAPI content, Nexo items, model data, and item models
+✅ Synchronized progression for matching objectives
+✅ Safety mode, configurable command aliases, and storage conversion tools
+✅ Multi-server friendly player-data delay and asynchronous SQL work
+✅ Editable messages with HEX colors
+✅ Custom quest types for manual or scripted completion with [B]/dqa customcomplete[/B]
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#55FFAA] LIFETIME TOTALS & LEADERBOARDS [/COLOR][/B][/SIZE]
+[SIZE=4][B]Keep the original overall total while tracking every period separately[/B][/SIZE][/CENTER]
+
+Every player now has four lifetime completion totals:
+
+✅ Overall total across Daily + Weekly + Monthly
+✅ Daily lifetime total
+✅ Weekly lifetime total
+✅ Monthly lifetime total
+
+Existing totals remain fully backwards compatible. [CODE]%odailyquests_total%[/CODE], existing total commands, and the all-time leaderboard continue to use the player's [B]combined overall total[/B].
+
+Create holograms, scoreboards, menus, chat formats, or NPC displays without a separate leaderboard addon:
+
+[CODE]%odailyquests_total_1_alltime_name%[/CODE]
+Returns the name of the player at rank 1. Replace [B]1[/B] with any positive position.
+
+[CODE]%odailyquests_total_1_alltime_value%[/CODE]
+Returns that ranked player's combined lifetime completed-quest total.
+
+[CODE]%odailyquests_total_position%[/CODE]
+Returns the viewing player's current all-time rank.
+
+✅ Works with [B]YAML, SQLite, and MySQL[/B]
+✅ Includes persisted offline-player totals and current active-player progress
+✅ Uses a short cache so scoreboards can request rankings efficiently
+✅ Deterministic ranking order for tied totals
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#F5A623]PLACEHOLDERAPI[/COLOR][/B][/SIZE][/CENTER]
+
+Use [B]daily[/B], [B]weekly[/B], or [B]monthly[/B] in period-specific placeholders:
+
+[CODE]%odailyquests_daily_total%
+%odailyquests_weekly_total%
+%odailyquests_monthly_total%
+
+%odailyquests_daily_achieved%
+%odailyquests_weekly_drawin%
+%odailyquests_monthly_name_1%
+%odailyquests_weekly_progress_1%
+%odailyquests_daily_progressbar_1%
+%odailyquests_weekly_total_easy%[/CODE]
+
+Period prefixes also work with quest status, completion, required amount, description, and category placeholders. Existing unqualified placeholders remain supported for backwards compatibility.
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#F5A623]QUEST TYPES[/COLOR][/B][/SIZE][/CENTER]
+
+[B][COLOR=#55AAFF]BLOCKS & ITEMS[/COLOR][/B]
+✅ BREAK — Break blocks
+✅ PLACE — Place blocks
+✅ GET / PICKUP — Obtain or pick up items
+✅ CRAFT — Craft items
+✅ COOK — Extract cooked items
+✅ ENCHANT — Enchant items
+✅ FISH — Catch items while fishing
+✅ FARMING — Harvest mature crops
+✅ CONSUME — Eat, drink, or use consumables
+✅ LAUNCH — Launch projectiles
+✅ CARVE — Carve pumpkins
+
+[B][COLOR=#55AAFF]ENTITIES & PLAYER ACTIONS[/COLOR][/B]
+✅ KILL — Kill mobs or players
+✅ TAME / BREED / SHEAR / MILKING — Animal objectives
+✅ FIREBALL_REFLECT — Reflect a fireball
+✅ VILLAGER_TRADE — Complete matching villager trades
+✅ LOCATION — Reach configured coordinates
+✅ EXP_POINTS / EXP_LEVELS — Earn experience
+✅ PLAYER_DEATH — Track player deaths
+✅ PLACEHOLDER — Compare a PlaceholderAPI value
+
+[B][COLOR=#55AAFF]PLUGIN INTEGRATION[/COLOR][/B]
+✅ VOTIFIER_PLUS — Progress quests from votes
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#55AAFF] REWARDS [/COLOR][/B][/SIZE][/CENTER]
+
+✅ [B]COMMAND[/B] — Execute one or more console commands
+✅ [B]EXP_POINTS / EXP_LEVELS[/B] — Grant experience
+✅ [B]MONEY[/B] — Economy rewards through Vault
+✅ [B]POINTS[/B] — PlayerPoints rewards
+✅ [B]NONE[/B] — Completion without a direct reward
+
+Quest rewards support dynamic values such as quest name, required amount, current progress, and reward amount.
+
+Each period can have independent quest rewards, category-completion rewards, and an all-quests-completed reward. Daily rewards never trigger Weekly or Monthly rewards, and vice versa.
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#F5A623]COMMANDS[/COLOR][/B][/SIZE][/CENTER]
+
+[B][COLOR=#55AAFF]PLAYER COMMANDS[/COLOR][/B]
+✅ [B]/dq me [daily|weekly|monthly][/B] — Open your quests for a period
+✅ [B]/dq show [period] <category>[/B] — Browse a period's quest category
+✅ [B]/dq reroll [period] <index>[/B] — Reroll a quest within its period
+
+[B][COLOR=#55AAFF]PERIOD-AWARE ADMIN COMMANDS[/COLOR][/B]
+✅ [B]/dqa complete <player> [period] <index>[/B]
+✅ [B]/dqa reroll <player> [period] <index>[/B]
+✅ [B]/dqa set <player> [period] <slot> <category> <quest-id>[/B]
+✅ [B]/dqa reset quests <player> [period|all][/B]
+✅ [B]/dqa show <player> [period][/B]
+✅ [B]/dqa open <player> [period][/B]
+
+[B][COLOR=#55AAFF]OTHER ADMIN TOOLS[/COLOR][/B]
+✅ [B]/dqa reload[/B]
+✅ [B]/dqa add / remove / customcomplete[/B]
+✅ [B]/dqa convert[/B] — Convert supported storage formats
+
+Existing command formats without a period continue to work. Command and subcommand aliases are configurable.
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#55AAFF] INTEGRATIONS [/COLOR][/B][/SIZE][/CENTER]
+
+[B]No dependency is required for the core quest system.[/B] Install an optional plugin only when you use its related feature:
+
+✅ PlaceholderAPI
+✅ Vault
+✅ PlayerPoints
+✅ Citizens
+✅ WorldGuard
+✅ HeadDatabase
+✅ Nexo
+✅ VotifierPlus
+✅ eco
+
+[COLOR=#FFAA00][B]Difference from the archived original:[/B][/COLOR] Version 4.5 has a focused integration set. Legacy hooks for ItemsAdder, Oraxen, MMOItems, RoseStacker, WildStacker, FancyNPCs, MythicMobs, EliteMobs, custom fishing/crate plugins, TokenManager, CoinsEngine, and NuVotifier are not included. The former public Java API/event layer and Folia declaration are also not part of this release.
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#55FFAA] SAFE UPGRADING [/COLOR][/B][/SIZE][/CENTER]
+
+Version 4.5 keeps existing Daily-only servers working while adding the new period system:
+
+✅ Existing quest files keep their original names
+✅ The previously configured Daily, Weekly, or Monthly period remains the active period
+✅ Existing YAML, SQLite, and MySQL player data is migrated into that same period automatically
+✅ Existing overall lifetime totals and leaderboard behavior are preserved
+✅ Weekly and Monthly are disabled by default until you choose to enable them
+✅ Disabled-period data is preserved if that period is enabled again later
+
+[COLOR=#FFAA00][B]Always back up the ODailyQuests folder and database before updating.[/B][/COLOR]
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[CENTER][SIZE=6][B][COLOR=#F5A623]INSTALLATION & SUPPORT[/COLOR][/B][/SIZE][/CENTER]
+
+[LIST=1]
+[*]Run [B]Paper 26.2[/B] with [B]Java 25[/B].
+[*]Place [B]ODailyQuests-4.5.jar[/B] in your server's plugins folder.
+[*]Start once to generate the configuration and example quest files.
+[*]Stop the server, configure the files in [B]plugins/ODailyQuests[/B], then restart.
+[*]Enable and configure Weekly or Monthly under [B]quest_periods[/B] when desired.
+[/LIST]
+
+[CENTER]
+Need help? Join the [URL='https://discord.gg/v3SjfAQsdB'][B]Discord support server[/B][/URL] or open a [URL='https://github.com/LucidAPs/ODailyQuests/issues'][B]GitHub issue[/B][/URL].
+
+Originally developed by [B]Ordwen[/B] from 2022 to 2026.
+Maintained for modern Minecraft versions by [B]LucidAPs[/B].
+
+[URL='https://www.spigotmc.org/resources/authors/lucidaps.715695/'][B]MORE RESOURCES FROM LUCIDAPS[/B]
+[IMG]https://i.imgur.com/XJk2fsN.png[/IMG] [/URL][/CENTER]

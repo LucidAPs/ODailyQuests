@@ -2,6 +2,7 @@ package com.lucidaps.odailyquests.quests.player.progression.storage.sql;
 
 import com.lucidaps.odailyquests.configuration.essentials.Database;
 import com.lucidaps.odailyquests.configuration.essentials.Logs;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.enums.SQLQuery;
 import com.lucidaps.odailyquests.enums.StorageMode;
@@ -32,14 +33,29 @@ public class SaveProgressionSQL {
         else TaskScheduler.runAsync(() -> save(playerName, playerUuid, data));
     }
 
-    /** Legacy converter adapter: imported data belongs to Daily. */
+    /** Legacy converter adapter: imported data belongs to the server's former single period. */
     public void saveProgression(String playerName, String playerUuid, PlayerQuests playerQuests, boolean forceSync) {
+        final QuestPeriod legacyPeriod = QuestPeriods.getLegacyPeriod();
         saveProgression(
                 playerName,
                 playerUuid,
-                new PlayerQuestData(playerQuests.getTotalAchievedQuests(), Map.of(QuestPeriod.DAILY, playerQuests)),
+                new PlayerQuestData(
+                        playerQuests.getTotalAchievedQuests(),
+                        Map.of(legacyPeriod, copyForPeriod(playerQuests, legacyPeriod))
+                ),
                 forceSync
         );
+    }
+
+    private PlayerQuests copyForPeriod(PlayerQuests source, QuestPeriod period) {
+        if (source.getPeriod() == period) return source;
+
+        final PlayerQuests converted = new PlayerQuests(period, source.getTimestamp(), source.getQuests());
+        converted.setAchievedQuests(source.getAchievedQuests());
+        converted.setTotalAchievedQuests(source.getTotalAchievedQuests());
+        converted.setRecentRerolls(source.getRecentlyRolled());
+        converted.setTotalAchievedQuestsByCategory(source.getTotalAchievedQuestsByCategory());
+        return converted;
     }
 
     private void save(String playerName, String playerUuid, PlayerQuestData data) {

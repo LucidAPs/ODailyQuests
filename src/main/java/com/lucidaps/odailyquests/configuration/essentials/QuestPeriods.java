@@ -53,6 +53,7 @@ public final class QuestPeriods implements IConfigurable {
 
     private final ConfigurationFile configurationFile;
     private final EnumMap<QuestPeriod, Settings> settings = new EnumMap<>(QuestPeriod.class);
+    private QuestPeriod legacyPeriod = QuestPeriod.DAILY;
 
     public QuestPeriods(ConfigurationFile configurationFile) {
         this.configurationFile = configurationFile;
@@ -62,6 +63,7 @@ public final class QuestPeriods implements IConfigurable {
     public void load() {
         settings.clear();
         final FileConfiguration config = configurationFile.getConfig();
+        legacyPeriod = LegacyPeriodResolver.resolve(config);
         final ConfigurationSection periods = config.getConfigurationSection("quest_periods");
 
         for (QuestPeriod period : QuestPeriod.values()) {
@@ -195,6 +197,11 @@ public final class QuestPeriods implements IConfigurable {
 
     public static QuestPeriod getDefaultPeriod() {
         return isEnabled(QuestPeriod.DAILY) ? QuestPeriod.DAILY : getEnabledPeriods().getFirst();
+    }
+
+    /** Period that owned the server's quest data before multi-period support. */
+    public static QuestPeriod getLegacyPeriod() {
+        return getInstance().legacyPeriod;
     }
 
     public static Map<String, QuestAmountSetting> getQuestAmounts(QuestPeriod period) {

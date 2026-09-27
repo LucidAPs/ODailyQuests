@@ -1,8 +1,10 @@
 package com.lucidaps.odailyquests.files.implementations;
 
 import com.lucidaps.odailyquests.ODailyQuests;
+import com.lucidaps.odailyquests.configuration.essentials.LegacyPeriodResolver;
 import com.lucidaps.odailyquests.enums.QuestPeriod;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import com.lucidaps.odailyquests.tools.PluginLogger;
@@ -11,11 +13,31 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class QuestsFiles {
+
+    private enum NamingStyle {
+        LEGACY,
+        MODERN
+    }
+
+    private record StandardQuestFile(String resourceName, String modernName, String legacyName) {
+        String destinationName(NamingStyle style) {
+            return style == NamingStyle.LEGACY ? legacyName : modernName;
+        }
+    }
+
+    private static final List<StandardQuestFile> STANDARD_QUEST_FILES = List.of(
+            new StandardQuestFile("easy.yml", "easy.yml", "easyQuests.yml"),
+            new StandardQuestFile("medium.yml", "medium.yml", "mediumQuests.yml"),
+            new StandardQuestFile("hard.yml", "hard.yml", "hardQuests.yml"),
+            new StandardQuestFile("global.yml", "global.yml", "globalQuests.yml")
+    );
 
     private static final Map<QuestPeriod, Map<String, FileConfiguration>> configurations = new java.util.EnumMap<>(QuestPeriod.class);
 
@@ -47,26 +69,40 @@ public class QuestsFiles {
     public void load() {
         configurations.clear();
 
+        final File dailyFolder = getPeriodFolder(QuestPeriod.DAILY);
+        if (!dailyFolder.exists()) dailyFolder.mkdirs();
+        if (!hasYamlFiles(dailyFolder)) createDefaultQuestFiles(dailyFolder);
+
+        final NamingStyle namingStyle = detectNamingStyle(dailyFolder);
+        final FileConfiguration mainConfig = plugin.getFilesManager().getConfigurationFile().getConfig();
+        final boolean legacySinglePeriod = !mainConfig.isConfigurationSection("quest_periods");
+        final QuestPeriod legacyPeriod = legacySinglePeriod
+                ? LegacyPeriodResolver.resolve(mainConfig)
+                : null;
+
         for (QuestPeriod period : QuestPeriod.values()) {
             configurations.put(period, new HashMap<>());
-            loadPeriod(period);
+            final File questsFolder = getPeriodFolder(period);
+            if (!questsFolder.exists()) questsFolder.mkdirs();
+
+            if (legacySinglePeriod && period != QuestPeriod.DAILY && period == legacyPeriod) {
+                copyLegacyPeriodFiles(dailyFolder, questsFolder, namingStyle, mainConfig);
+            }
+            ensureStandardQuestFiles(period, questsFolder, namingStyle);
+            loadPeriod(period, questsFolder);
         }
     }
 
-    private void loadPeriod(QuestPeriod period) {
+    private File getPeriodFolder(QuestPeriod period) {
         final String relativeFolder = switch (period) {
             case DAILY -> "quests";
             case WEEKLY -> "quests/weekly";
             case MONTHLY -> "quests/monthly";
         };
-        final File questsFolder = new File(plugin.getDataFolder(), relativeFolder);
+        return new File(plugin.getDataFolder(), relativeFolder);
+    }
 
-        if (!questsFolder.exists() || questsFolder.listFiles() == null || questsFolder.listFiles().length == 0) {
-            questsFolder.mkdirs();
-            if (period == QuestPeriod.DAILY) createDefaultQuestFiles();
-            else createPeriodQuestFiles(period, questsFolder);
-        }
-
+    private void loadPeriod(QuestPeriod period, File questsFolder) {
         final File[] questFiles = questsFolder.listFiles((dir, name) -> name.endsWith(".yml"));
         if (questFiles == null) {
             PluginLogger.error("An error occurred while loading quests files.");
@@ -90,26 +126,87 @@ public class QuestsFiles {
         }
     }
 
-    private void createDefaultQuestFiles() {
-        final String[] defaultFiles = {"examples.yml", "easy.yml", "medium.yml", "hard.yml"};
+    private boolean hasYamlFiles(File folder) {
+        final File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml"));
+        return files != null && files.length > 0;
+    }
 
-        for (String fileName : defaultFiles) {
-            plugin.saveResource("quests/" + fileName, false);
-            PluginLogger.info(fileName + " created as default.");
+    private void createDefaultQuestFiles(File dailyFolder) {
+        plugin.saveResource("quests/examples.yml", false);
+        PluginLogger.info("examples.yml created as default.");
+        ensureStandardQuestFiles(QuestPeriod.DAILY, dailyFolder, NamingStyle.MODERN);
+    }
+
+    private NamingStyle detectNamingStyle(File dailyFolder) {
+        final FileConfiguration mainConfig = plugin.getFilesManager().getConfigurationFile().getConfig();
+        final ConfigurationSection configuredAmounts = mainConfig.getConfigurationSection("quest_periods.daily.quests_per_category") != null
+                ? mainConfig.getConfigurationSection("quest_periods.daily.quests_per_category")
+                : mainConfig.getConfigurationSection("quests_per_category");
+
+        if (configuredAmounts != null) {
+            for (String category : configuredAmounts.getKeys(false)) {
+                if (isLegacyStandardCategory(category)) return NamingStyle.LEGACY;
+            }
+        }
+
+        for (StandardQuestFile standard : STANDARD_QUEST_FILES) {
+            if (new File(dailyFolder, standard.legacyName()).isFile()) return NamingStyle.LEGACY;
+        }
+        return NamingStyle.MODERN;
+    }
+
+    private boolean isLegacyStandardCategory(String category) {
+        for (StandardQuestFile standard : STANDARD_QUEST_FILES) {
+            final String legacyCategory = standard.legacyName().substring(0, standard.legacyName().length() - 4);
+            if (legacyCategory.equalsIgnoreCase(category)) return true;
+        }
+        return false;
+    }
+
+    private void ensureStandardQuestFiles(QuestPeriod period, File questsFolder, NamingStyle style) {
+        for (StandardQuestFile standard : STANDARD_QUEST_FILES) {
+            final String destinationName = standard.destinationName(style);
+            final File destination = new File(questsFolder, destinationName);
+            if (destination.exists()) continue;
+
+            try (InputStream source = plugin.getResource("quests/" + standard.resourceName())) {
+                if (source == null) {
+                    PluginLogger.error("Bundled quest template quests/" + standard.resourceName() + " is missing.");
+                    continue;
+                }
+                Files.copy(source, destination.toPath());
+                PluginLogger.info(period.getDisplayName() + " " + destinationName + " example created.");
+            } catch (IOException exception) {
+                PluginLogger.error("Could not create " + period.getDisplayName() + " example file " + destinationName + ".");
+                PluginLogger.error(exception.getMessage());
+            }
         }
     }
 
-    private void createPeriodQuestFiles(QuestPeriod period, File questsFolder) {
-        final String[] defaultFiles = {"easy.yml", "medium.yml", "hard.yml"};
-        for (String fileName : defaultFiles) {
-            final File destination = new File(questsFolder, fileName);
-            try (InputStream source = plugin.getResource("quests/" + fileName)) {
-                if (source == null) continue;
-                Files.copy(source, destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                PluginLogger.info(period.getDisplayName() + " " + fileName + " example created.");
+    private void copyLegacyPeriodFiles(File dailyFolder,
+                                       File periodFolder,
+                                       NamingStyle style,
+                                       FileConfiguration mainConfig) {
+        final Set<String> fileNames = new LinkedHashSet<>();
+        for (StandardQuestFile standard : STANDARD_QUEST_FILES) {
+            fileNames.add(standard.destinationName(style));
+        }
+
+        final ConfigurationSection configuredAmounts = mainConfig.getConfigurationSection("quests_per_category");
+        if (configuredAmounts != null) {
+            for (String category : configuredAmounts.getKeys(false)) fileNames.add(category + ".yml");
+        }
+
+        for (String fileName : fileNames) {
+            final File source = new File(dailyFolder, fileName);
+            final File destination = new File(periodFolder, fileName);
+            if (!source.isFile() || destination.exists()) continue;
+
+            try {
+                Files.copy(source.toPath(), destination.toPath());
+                PluginLogger.info("Copied legacy " + fileName + " into the preserved quest period.");
             } catch (IOException exception) {
-                PluginLogger.error("Could not create " + period.getDisplayName() + " example file " + fileName + ".");
-                PluginLogger.error(exception.getMessage());
+                PluginLogger.error("Could not preserve legacy quest file " + fileName + ": " + exception.getMessage());
             }
         }
     }

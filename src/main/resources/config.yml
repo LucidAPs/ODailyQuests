@@ -51,6 +51,7 @@ safety_mode: true
 # More information here: https://ordwenplugins.gitbook.io/odailyquests/quests/create-a-category
 quests_per_category:
   #examples: 9
+  # To use one shared pool instead, remove/comment the difficulty categories and set: global: 3
   easy: 3  # The player will receive 3 quests from the "easy.yml" file
   medium: 3
   hard: 3
@@ -60,6 +61,9 @@ quests_per_category:
 # The global category keeps exactly the same behaviour as every other custom
 # category; each period simply loads it from a different folder.
 quest_periods:
+  # Compatibility marker for data created before multiple periods were supported.
+  # Do not change this after legacy player data has been imported.
+  legacy_period: daily
   daily:
     # Quest files: plugins/ODailyQuests/quests/*.yml
     enabled: true
@@ -68,6 +72,7 @@ quest_periods:
       time: "00:00"
       time_zone: "SystemDefault"
     quests_per_category:
+      # To use one shared pool instead, remove/comment the difficulty categories and set: global: 3
       easy: 3
       medium: 3
       hard: 3
@@ -82,6 +87,7 @@ quest_periods:
       time: "00:00"
       time_zone: "SystemDefault"
     quests_per_category:
+      # Use global instead of the difficulty categories when you want one shared pool.
       easy: 3
       medium: 3
       hard: 3
@@ -100,6 +106,7 @@ quest_periods:
       time: "00:00"
       time_zone: "SystemDefault"
     quests_per_category:
+      # Use global instead of the difficulty categories when you want one shared pool.
       easy: 3
       medium: 3
       hard: 3

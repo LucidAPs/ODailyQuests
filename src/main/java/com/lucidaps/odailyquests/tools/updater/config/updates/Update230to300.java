@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 
 public class Update230to300 extends ConfigUpdater {
 
@@ -54,7 +55,6 @@ public class Update230to300 extends ConfigUpdater {
         replaceQuestsAmount();
         replaceInterfaceNames();
         replaceNPCNames();
-        renameQuestFiles();
         cleanupCategoryRewards();
 
         updateVersion(version);
@@ -77,15 +77,15 @@ public class Update230to300 extends ConfigUpdater {
 
         if (currentMode == 1) {
             final int globalAmount = config.getInt("global_quests_amount");
-            setDefaultConfigItem("quests_per_category.global", globalAmount, config, configFile, false);
+            setDefaultConfigItem("quests_per_category." + categoryKey("global"), globalAmount, config, configFile, false);
         } else {
             final int easyAmount = config.getInt("easy_quests_amount");
             final int mediumAmount = config.getInt("medium_quests_amount");
             final int hardAmount = config.getInt("hard_quests_amount");
 
-            if (easyAmount > 0) setDefaultConfigItem("quests_per_category.easy", easyAmount, config, configFile, false);
-            if (mediumAmount > 0) setDefaultConfigItem("quests_per_category.medium", mediumAmount, config, configFile, false);
-            if (hardAmount > 0) setDefaultConfigItem("quests_per_category.hard", hardAmount, config, configFile, false);
+            if (easyAmount > 0) setDefaultConfigItem("quests_per_category." + categoryKey("easy"), easyAmount, config, configFile, false);
+            if (mediumAmount > 0) setDefaultConfigItem("quests_per_category." + categoryKey("medium"), mediumAmount, config, configFile, false);
+            if (hardAmount > 0) setDefaultConfigItem("quests_per_category." + categoryKey("hard"), hardAmount, config, configFile, false);
         }
 
         removeConfigItem("quests_mode", config, configFile);
@@ -97,7 +97,7 @@ public class Update230to300 extends ConfigUpdater {
 
     private void replaceInterfaceNames() {
         final String[] oldInterfaceNames = {"global_quests", "easy_quests", "medium_quests", "hard_quests"};
-        final String[] newInterfaceNames = {"global", "easy", "medium", "hard"};
+        final String[] baseCategoryNames = {"global", "easy", "medium", "hard"};
 
         final ConfigurationSection section = config.getConfigurationSection("interfaces");
         if (section == null) {
@@ -107,14 +107,15 @@ public class Update230to300 extends ConfigUpdater {
 
         int i = 0;
         for (String interfaceName : oldInterfaceNames) {
+            final String newInterfaceName = categoryKey(baseCategoryNames[i]);
             final String inventoryName = section.getString(interfaceName + ".inventory_name");
             final String emptyItem = section.getString(interfaceName + ".empty_item");
 
-            setDefaultConfigItem("interfaces." + newInterfaceNames[i] + ".inventory_name", inventoryName, config, configFile, false);
-            setDefaultConfigItem("interfaces." + newInterfaceNames[i] + ".empty_item", emptyItem, config, configFile, false);
+            setDefaultConfigItem("interfaces." + newInterfaceName + ".inventory_name", inventoryName, config, configFile, false);
+            setDefaultConfigItem("interfaces." + newInterfaceName + ".empty_item", emptyItem, config, configFile, false);
 
             removeConfigItem("interfaces." + interfaceName, config, configFile);
-            parameterReplaced("interfaces." + interfaceName, "interfaces." + newInterfaceNames[i]);
+            parameterReplaced("interfaces." + interfaceName, "interfaces." + newInterfaceName);
 
             i++;
         }
@@ -122,54 +123,37 @@ public class Update230to300 extends ConfigUpdater {
 
     private void replaceNPCNames() {
         final String[] oldNPCNames = {"name_player", "name_global", "name_easy", "name_medium", "name_hard"};
-        final String[] newNPCNames = {"player", "global", "easy", "medium", "hard"};
+        final String[] baseCategoryNames = {"player", "global", "easy", "medium", "hard"};
 
         int i = 0;
         for (String NPCName : oldNPCNames) {
+            final String newNPCName = i == 0 ? "player" : categoryKey(baseCategoryNames[i]);
             final String name = config.getString("npcs." + NPCName);
 
-            setDefaultConfigItem("npcs." + newNPCNames[i], name, config, configFile, false);
+            setDefaultConfigItem("npcs." + newNPCName, name, config, configFile, false);
             removeConfigItem("npcs." + NPCName, config, configFile);
 
-            parameterReplaced(NPCName, newNPCNames[i]);
+            parameterReplaced(NPCName, newNPCName);
 
             i++;
-        }
-    }
-
-    /**
-     * Renames all quest files in the "quests" folder by removing the "Quests" suffix.
-     */
-    private void renameQuestFiles() {
-        final File questsFolder = new File(ODailyQuests.INSTANCE.getDataFolder(), "quests");
-        if (!questsFolder.exists() || !questsFolder.isDirectory()) {
-            PluginLogger.warn("Quests folder does not exist or is not a directory.");
-            return;
-        }
-
-        final File[] files = questsFolder.listFiles();
-        if (files == null) {
-            PluginLogger.warn("No files found in the quests directory.");
-            return;
-        }
-
-        for (File file : files) {
-            if (file.isFile() && file.getName().endsWith("Quests.yml")) {
-                final String newName = file.getName().replace("Quests", "");
-                final File newFile = new File(questsFolder, newName);
-
-                if (file.renameTo(newFile)) {
-                    PluginLogger.warn("Renamed " + file.getName() + " to " + newFile.getName());
-                } else {
-                    PluginLogger.error("Failed to rename " + file.getName());
-                }
-            }
         }
     }
 
     private void cleanupCategoryRewards() {
         final ConfigurationSection rewards = config.getConfigurationSection("categories_rewards");
         if (rewards == null) return;
+
+        for (String baseName : new String[]{"global", "easy", "medium", "hard"}) {
+            final String targetName = categoryKey(baseName);
+            if (targetName.equals(baseName) || !rewards.isConfigurationSection(baseName)
+                    || rewards.isConfigurationSection(targetName)) continue;
+
+            final ConfigurationSection source = rewards.getConfigurationSection(baseName);
+            if (source != null) {
+                rewards.set(targetName, new LinkedHashMap<>(source.getValues(false)));
+                rewards.set(baseName, null);
+            }
+        }
 
         int kept = 0;
 
@@ -196,5 +180,11 @@ public class Update230to300 extends ConfigUpdater {
             config.set("categories_rewards", new ArrayList<>());
             PluginLogger.warn("No active category rewards found. Set categories_rewards to an empty list [] to avoid load errors.");
         }
+    }
+
+    private String categoryKey(String baseName) {
+        final File questsFolder = new File(ODailyQuests.INSTANCE.getDataFolder(), "quests");
+        if (new File(questsFolder, baseName + "Quests.yml").isFile()) return baseName + "Quests";
+        return baseName;
     }
 }

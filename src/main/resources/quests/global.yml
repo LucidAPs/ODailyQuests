@@ -1,0 +1,174 @@
+# ==============================================================
+#                       GLOBAL QUESTS FILE
+# ==============================================================
+# Use this category when you prefer one shared quest pool instead
+# of separate Easy, Medium, and Hard categories.
+#
+# This template is copied independently for Daily, Weekly, and
+# Monthly periods. Editing one period never changes another.
+# ==============================================================
+quests:
+  1:
+    name: "&aStone Collector"
+    menu_item: STONE_PICKAXE
+    description:
+      - "&7Mine &f%required% &7stone."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: BREAK
+    required:
+      - STONE
+      - COBBLESTONE
+    required_amount: 64
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  2:
+    name: "&aLumberjack"
+    menu_item: IRON_AXE
+    description:
+      - "&7Break &f%required% &7logs."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: BREAK
+    required:
+      - OAK_LOG
+      - SPRUCE_LOG
+      - BIRCH_LOG
+      - JUNGLE_LOG
+      - ACACIA_LOG
+      - DARK_OAK_LOG
+      - MANGROVE_LOG
+      - CHERRY_LOG
+    required_amount: 32
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  3:
+    name: "&aZombie Hunter"
+    menu_item: ZOMBIE_HEAD
+    description:
+      - "&7Defeat &f%required% &7zombies."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: KILL
+    required: ZOMBIE
+    required_amount: 20
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  4:
+    name: "&aSuccessful Harvest"
+    menu_item: WHEAT
+    description:
+      - "&7Harvest &f%required% &7wheat."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: FARMING
+    required: WHEAT
+    required_amount: 32
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  5:
+    name: "&aFresh Bread"
+    menu_item: BREAD
+    description:
+      - "&7Craft &f%required% &7bread."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: CRAFT
+    required: BREAD
+    required_amount: 16
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  6:
+    name: "&aFishing Trip"
+    menu_item: FISHING_ROD
+    description:
+      - "&7Catch &f%required% &7cod."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: FISH
+    required: COD
+    required_amount: 8
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  7:
+    name: "&aStone Smelter"
+    menu_item: FURNACE
+    description:
+      - "&7Smelt &f%required% &7stone."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: COOK
+    required: STONE
+    required_amount: 32
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  8:
+    name: "&aCobblestone Supply"
+    menu_item: COBBLESTONE
+    description:
+      - "&7Obtain &f%required% &7cobblestone."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: GET
+    required: COBBLESTONE
+    required_amount: 64
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  9:
+    name: "&aSnowball Fight"
+    menu_item: SNOWBALL
+    description:
+      - "&7Throw &f%required% &7snowballs."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: LAUNCH
+    required: SNOWBALL
+    required_amount: 16
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  10:
+    name: "&aWool Gathering"
+    menu_item: SHEARS
+    description:
+      - "&7Shear &f%required% &7sheep."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: SHEAR
+    required: SHEEP
+    required_amount: 8
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  11:
+    name: "&aExperienced"
+    menu_item: EXPERIENCE_BOTTLE
+    description:
+      - "&7Gain &f%required% &7experience levels."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: EXP_LEVELS
+    required_amount: 5
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10
+
+  12:
+    name: "&aWell Fed"
+    menu_item: COOKED_BEEF
+    description:
+      - "&7Eat &f%required% &7cooked beef."
+      - "&7Progress: %progressBar% &f%progress%&7/&f%required%"
+    quest_type: CONSUME
+    required: COOKED_BEEF
+    required_amount: 8
+    reward:
+      reward_type: EXP_POINTS
+      amount: 10

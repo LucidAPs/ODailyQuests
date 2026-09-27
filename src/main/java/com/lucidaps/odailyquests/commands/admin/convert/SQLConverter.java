@@ -46,9 +46,10 @@ public abstract class SQLConverter {
             final ConfigurationSection periodSections = playerSection.getConfigurationSection("periods");
 
             if (periodSections == null) {
-                final PlayerQuests daily = loadPeriod(playerUuid, QuestPeriod.DAILY, playerSection);
-                if (daily == null) return;
-                periods.put(QuestPeriod.DAILY, daily);
+                final QuestPeriod legacyPeriod = QuestPeriods.getLegacyPeriod();
+                final PlayerQuests legacyQuests = loadPeriod(playerUuid, legacyPeriod, playerSection);
+                if (legacyQuests == null) return;
+                periods.put(legacyPeriod, legacyQuests);
             } else {
                 for (QuestPeriod period : QuestPeriods.getEnabledPeriods()) {
                     final ConfigurationSection periodSection = periodSections.getConfigurationSection(period.getConfigKey());

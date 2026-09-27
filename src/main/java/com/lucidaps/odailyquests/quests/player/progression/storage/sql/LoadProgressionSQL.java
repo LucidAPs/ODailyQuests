@@ -62,8 +62,9 @@ public class LoadProgressionSQL extends ProgressionLoader {
             final EnumMap<QuestPeriod, LoadedPeriod> loaded = loadPeriodData(connection, playerName, uuid);
 
             if (loaded.isEmpty() && legacy != null) {
-                final LoadedPeriod daily = loadLegacyDaily(connection, playerName, uuid, legacy);
-                if (daily != null) loaded.put(QuestPeriod.DAILY, daily);
+                final QuestPeriod legacyPeriod = QuestPeriods.getLegacyPeriod();
+                final LoadedPeriod legacyData = loadLegacyPeriod(connection, playerName, uuid, legacyPeriod, legacy);
+                if (legacyData != null) loaded.put(legacyPeriod, legacyData);
             }
 
             registerOnMainThread(playerName, overallTotal, loaded, sendStatusMessage);
@@ -127,14 +128,14 @@ public class LoadProgressionSQL extends ProgressionLoader {
         return new LoadedPeriod(state, loadQuests(connection, playerName, uuid, period, true), totals);
     }
 
-    private LoadedPeriod loadLegacyDaily(Connection connection, String playerName, String uuid,
-                                         LegacyPlayer legacy) throws SQLException {
+    private LoadedPeriod loadLegacyPeriod(Connection connection, String playerName, String uuid,
+                                          QuestPeriod period, LegacyPlayer legacy) throws SQLException {
         final PeriodState state = new PeriodState(legacy.timestamp(), legacy.achieved(), legacy.total(), legacy.rerolls());
-        final Map<String, Integer> totals = loadCategoryTotals(connection, uuid, QuestPeriod.DAILY, false);
-        if (QuestLoaderUtils.checkTimestamp(QuestPeriod.DAILY, state.timestamp())) {
+        final Map<String, Integer> totals = loadCategoryTotals(connection, uuid, period, false);
+        if (QuestLoaderUtils.checkTimestamp(period, state.timestamp())) {
             return new LoadedPeriod(state, null, totals);
         }
-        return new LoadedPeriod(state, loadQuests(connection, playerName, uuid, QuestPeriod.DAILY, false), totals);
+        return new LoadedPeriod(state, loadQuests(connection, playerName, uuid, period, false), totals);
     }
 
     private Map<String, Integer> loadCategoryTotals(Connection connection, String uuid,

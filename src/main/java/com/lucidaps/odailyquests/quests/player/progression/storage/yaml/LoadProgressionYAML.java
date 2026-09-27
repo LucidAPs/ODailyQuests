@@ -49,10 +49,11 @@ public class LoadProgressionYAML extends ProgressionLoader {
                 ? playerSection.getInt("overallTotalAchievedQuests")
                 : playerSection.getInt("totalAchievedQuests");
         final ConfigurationSection periodsSection = playerSection.getConfigurationSection("periods");
+        final QuestPeriod legacyPeriod = QuestPeriods.getLegacyPeriod();
 
         for (QuestPeriod period : QuestPeriods.getEnabledPeriods()) {
             final ConfigurationSection periodSection = periodsSection == null
-                    ? (period == QuestPeriod.DAILY ? playerSection : null)
+                    ? (period == legacyPeriod ? playerSection : null)
                     : periodsSection.getConfigurationSection(period.getConfigKey());
 
             if (periodSection == null) {

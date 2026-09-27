@@ -138,10 +138,9 @@ public class PlayerQuests {
             QuestCompletionHandler.handleGlobalTotalReward(player, overallTotal);
         }
 
-        // Legacy category lifetime rewards belonged to the original Daily pool.
-        // Keeping them Daily-only prevents identically named Weekly/Monthly
-        // categories from sharing a milestone counter.
-        if (period == QuestPeriod.DAILY && TotalRewards.isCategoryStep(category, this.totalAchievedQuestsByCategory.get(category))) {
+        // Legacy category lifetime rewards stay attached to the server's former
+        // single quest period so old Weekly/Monthly setups keep their behavior.
+        if (period == QuestPeriods.getLegacyPeriod() && TotalRewards.isCategoryStep(category, this.totalAchievedQuestsByCategory.get(category))) {
             Debugger.write("PlayerQuests: category total reward is handled for " + player.getName() + " in category " + category + " with total achieved quests: " + this.totalAchievedQuestsByCategory.get(category) + ".");
             QuestCompletionHandler.handleCategoryTotalReward(player, category, this.totalAchievedQuestsByCategory.get(category));
         }

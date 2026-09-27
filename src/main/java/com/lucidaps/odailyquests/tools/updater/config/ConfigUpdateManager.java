@@ -47,8 +47,8 @@ public class ConfigUpdateManager {
             }
         }
 
-        // This feature is safe to bootstrap independently of the release number:
-        // old top-level settings remain Daily and the new periods start disabled.
+        // Bootstrap independently of the release number. The former single
+        // Daily/Weekly/Monthly period stays enabled and the other two start disabled.
         new QuestPeriodsBootstrap(plugin).applyIfMissing();
 
         plugin.saveConfig();

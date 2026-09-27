@@ -1,14 +1,15 @@
 package com.lucidaps.odailyquests.tools.updater.database.updates;
 
 import com.lucidaps.odailyquests.ODailyQuests;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.tools.PluginLogger;
 import com.lucidaps.odailyquests.tools.updater.database.DatabaseUpdater;
 
 /**
  * Marks the introduction of independent period storage. SQL tables are created
  * idempotently by SQLManager; legacy rows are imported lazily on first load.
- * YAML legacy data is likewise read as Daily and written in the new layout on
- * the next save.
+ * YAML legacy data is likewise read as the server's former configured period
+ * and written in the new layout on the next save.
  */
 public final class Update4to5 extends DatabaseUpdater {
 
@@ -38,6 +39,7 @@ public final class Update4to5 extends DatabaseUpdater {
 
     @Override
     public void applyYAML() {
-        PluginLogger.info("Database update 4 -> 5: legacy quest data will be migrated to the Daily period on its next save.");
+        PluginLogger.info("Database update 4 -> 5: legacy quest data will be migrated to the "
+                + QuestPeriods.getLegacyPeriod().getDisplayName() + " period on its next save.");
     }
 }
