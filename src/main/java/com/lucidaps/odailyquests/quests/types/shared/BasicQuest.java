@@ -1,6 +1,7 @@
 package com.lucidaps.odailyquests.quests.types.shared;
 
 import com.lucidaps.odailyquests.quests.conditions.placeholder.PlaceholderCondition;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.quests.player.progression.Progression;
 import com.lucidaps.odailyquests.quests.types.AbstractQuest;
 import com.lucidaps.odailyquests.rewards.Reward;
@@ -38,8 +39,8 @@ public class BasicQuest extends AbstractQuest {
      * @param requiredPermissions   the permissions required to undertake the quest.
      * @param placeholderConditions the list of placeholder conditions for the quest.
      */
-    public BasicQuest(int questIndex, String fileIndex, String questName, String categoryName, List<String> questDesc, String questType, ItemStack menuItem, int menuItemAmount, ItemStack achievedItem, String requiredAmountRaw, Reward reward, List<String> requiredWorlds, List<String> requiredRegions, boolean protectionBypass, List<String> requiredPermissions, List<PlaceholderCondition> placeholderConditions) {
-        super(questIndex, fileIndex, questName, categoryName, questDesc, questType, menuItem, menuItemAmount, achievedItem, requiredAmountRaw, reward, requiredWorlds, requiredRegions, protectionBypass, requiredPermissions, placeholderConditions);
+    public BasicQuest(int questIndex, String fileIndex, String questName, String categoryName, QuestPeriod period, List<String> questDesc, String questType, ItemStack menuItem, int menuItemAmount, ItemStack achievedItem, String requiredAmountRaw, Reward reward, List<String> requiredWorlds, List<String> requiredRegions, boolean protectionBypass, List<String> requiredPermissions, List<PlaceholderCondition> placeholderConditions) {
+        super(questIndex, fileIndex, questName, categoryName, period, questDesc, questType, menuItem, menuItemAmount, achievedItem, requiredAmountRaw, reward, requiredWorlds, requiredRegions, protectionBypass, requiredPermissions, placeholderConditions);
     }
 
     /**

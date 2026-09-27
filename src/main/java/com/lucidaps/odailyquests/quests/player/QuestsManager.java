@@ -3,6 +3,8 @@ package com.lucidaps.odailyquests.quests.player;
 import com.lucidaps.odailyquests.ODailyQuests;
 import com.lucidaps.odailyquests.configuration.essentials.Debugger;
 import com.lucidaps.odailyquests.configuration.essentials.QuestsPerCategory;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.quests.categories.CategoriesLoader;
 import com.lucidaps.odailyquests.quests.categories.Category;
 import com.lucidaps.odailyquests.quests.conditions.placeholder.PlaceholderRuleSetEvaluator;
@@ -66,7 +68,15 @@ public class QuestsManager implements Listener {
      * <strong>Note:</strong> Keys are player names; if you plan to support name changes,
      * consider switching to UUID as the key.
      */
-    private static final Map<String, PlayerQuests> activeQuests = new ConcurrentHashMap<>();
+    private static final Map<QuestPeriod, Map<String, PlayerQuests>> activeQuests = new EnumMap<>(QuestPeriod.class);
+    private static final Map<String, Integer> overallLifetimeTotals = new ConcurrentHashMap<>();
+    private static final Set<String> loadedPlayers = ConcurrentHashMap.newKeySet();
+
+    static {
+        for (QuestPeriod period : QuestPeriod.values()) {
+            activeQuests.put(period, new ConcurrentHashMap<>());
+        }
+    }
 
     /**
      * Handles player join:
@@ -91,7 +101,7 @@ public class QuestsManager implements Listener {
         Debugger.write("Player " + playerName + " joined the server.");
         Debugger.write("Player UUID is " + uuid);
 
-        if (!activeQuests.containsKey(playerName)) {
+        if (!loadedPlayers.contains(playerName)) {
             Debugger.write("Player " + playerName + " is not in the array.");
             // Delegates to DB layer: expected to eventually populate activeQuests.
             plugin.getDatabaseManager().loadQuestsForPlayer(playerName);
@@ -124,16 +134,14 @@ public class QuestsManager implements Listener {
 
         Debugger.write("Player " + playerName + " left the server.");
 
-        final PlayerQuests playerQuests = activeQuests.get(playerName);
-
-        if (playerQuests == null) {
+        if (!loadedPlayers.contains(playerName)) {
             Debugger.write("Player " + playerName + " not found in the array.");
             PluginLogger.warn("Player quests not found for player " + playerName);
             return;
         }
 
-        plugin.getDatabaseManager().saveProgressionForPlayer(playerName, playerUUID, playerQuests);
-        activeQuests.remove(playerName);
+        plugin.getDatabaseManager().saveProgressionForPlayer(playerName, playerUUID);
+        removePlayer(playerName);
 
         Debugger.write("Player " + playerName + " removed from the array.");
     }
@@ -152,10 +160,14 @@ public class QuestsManager implements Listener {
      * @return an ordered map ({@link LinkedHashMap}) of quests to their initial progression
      */
     public static Map<AbstractQuest, Progression> selectRandomQuests(Player player) {
+        return selectRandomQuests(player, QuestPeriod.DAILY);
+    }
+
+    public static Map<AbstractQuest, Progression> selectRandomQuests(Player player, QuestPeriod period) {
         final Map<AbstractQuest, Progression> quests = new LinkedHashMap<>();
 
-        final Map<String, Category> categoryMap = CategoriesLoader.getAllCategories();
-        final Map<String, Integer> resolvedAmounts = QuestsPerCategory.resolveAllFor(player);
+        final Map<String, Category> categoryMap = CategoriesLoader.getAllCategories(period);
+        final Map<String, Integer> resolvedAmounts = QuestPeriods.resolveQuestAmounts(period, player);
 
         for (Map.Entry<String, Category> entry : categoryMap.entrySet()) {
             final String categoryName = entry.getKey();
@@ -311,6 +323,51 @@ public class QuestsManager implements Listener {
      * @return the live map of player name -&gt; {@link PlayerQuests}
      */
     public static Map<String, PlayerQuests> getActiveQuests() {
-        return activeQuests;
+        return getActiveQuests(QuestPeriod.DAILY);
+    }
+
+    public static Map<String, PlayerQuests> getActiveQuests(QuestPeriod period) {
+        return activeQuests.get(period);
+    }
+
+    public static PlayerQuests getPlayerQuests(String playerName, QuestPeriod period) {
+        return getActiveQuests(period).get(playerName);
+    }
+
+    public static void registerPlayerPeriod(String playerName, QuestPeriod period, PlayerQuests playerQuests) {
+        getActiveQuests(period).put(playerName, playerQuests);
+    }
+
+    public static void markPlayerLoaded(String playerName, int overallTotal) {
+        overallLifetimeTotals.put(playerName, overallTotal);
+        loadedPlayers.add(playerName);
+    }
+
+    public static boolean isPlayerLoaded(String playerName) {
+        return loadedPlayers.contains(playerName);
+    }
+
+    public static Set<String> getLoadedPlayers() {
+        return Set.copyOf(loadedPlayers);
+    }
+
+    public static int getOverallLifetimeTotal(String playerName) {
+        return overallLifetimeTotals.getOrDefault(playerName, 0);
+    }
+
+    public static void setOverallLifetimeTotal(String playerName, int total) {
+        overallLifetimeTotals.put(playerName, Math.max(total, 0));
+    }
+
+    public static int incrementOverallLifetimeTotal(String playerName) {
+        return overallLifetimeTotals.merge(playerName, 1, Integer::sum);
+    }
+
+    public static void removePlayer(String playerName) {
+        for (Map<String, PlayerQuests> periodQuests : activeQuests.values()) {
+            periodQuests.remove(playerName);
+        }
+        overallLifetimeTotals.remove(playerName);
+        loadedPlayers.remove(playerName);
     }
 }

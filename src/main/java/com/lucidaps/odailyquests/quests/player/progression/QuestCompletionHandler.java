@@ -1,6 +1,7 @@
 package com.lucidaps.odailyquests.quests.player.progression;
 
 import com.lucidaps.odailyquests.configuration.essentials.Debugger;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.configuration.functionalities.rewards.CategoriesRewards;
 import com.lucidaps.odailyquests.configuration.functionalities.rewards.GlobalReward;
 import com.lucidaps.odailyquests.configuration.functionalities.rewards.TotalRewards;
@@ -45,21 +46,29 @@ public final class QuestCompletionHandler {
 
         RewardManager.sendQuestRewardItems(formattedQuestName, player, quest.getReward(), progression);
 
-        final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(player.getName());
+        final PlayerQuests playerQuests = QuestsManager.getActiveQuests(quest.getPeriod()).get(player.getName());
         if (playerQuests != null) {
             playerQuests.increaseCategoryAchievedQuests(quest.getCategoryName(), player);
         }
     }
 
     public static void handleAllCategoryQuestsCompleted(Player player, String categoryName) {
-        final Category category = CategoriesLoader.getCategoryByName(categoryName);
+        handleAllCategoryQuestsCompleted(player, QuestPeriod.DAILY, categoryName);
+    }
+
+    public static void handleAllCategoryQuestsCompleted(Player player, QuestPeriod period, String categoryName) {
+        final Category category = CategoriesLoader.getCategoryByName(period, categoryName);
         if (category == null) return;
 
-        CategoriesRewards.sendCategoryReward(player, category.getName());
+        CategoriesRewards.sendCategoryReward(player, period, category.getName());
     }
 
     public static void handleAllQuestsCompleted(Player player) {
-        TaskScheduler.runSyncLater(() -> GlobalReward.sendGlobalReward(player.getName()), 1L);
+        handleAllQuestsCompleted(player, QuestPeriod.DAILY);
+    }
+
+    public static void handleAllQuestsCompleted(Player player, QuestPeriod period) {
+        TaskScheduler.runSyncLater(() -> GlobalReward.sendGlobalReward(player.getName(), period), 1L);
     }
 
     public static void handleGlobalTotalReward(Player player, int totalCompleted) {

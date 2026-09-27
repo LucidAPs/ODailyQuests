@@ -1,7 +1,8 @@
 package com.lucidaps.odailyquests.commands.admin.handlers;
 
 import com.lucidaps.odailyquests.commands.admin.AdminCommandBase;
-import com.lucidaps.odailyquests.configuration.essentials.RerollMaximum;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
@@ -28,19 +29,26 @@ public class ARerollCommand extends AdminCommandBase {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length >= 3 && args[1] != null && args[2] != null) {
+        if (args.length >= 3 && args.length <= 4 && args[1] != null) {
 
             final Player target = getTargetPlayer(sender, args[1]);
             if (target == null) {
                 return;
             }
 
-            int index = parseQuestIndex(sender, args[2]);
+            final QuestPeriod period = args.length == 4
+                    ? QuestPeriod.fromString(args[2]).orElse(null)
+                    : QuestPeriods.getDefaultPeriod();
+            if (period == null || !QuestPeriods.isEnabled(period)) {
+                help(sender);
+                return;
+            }
+            int index = parseQuestIndex(sender, args[args.length - 1]);
             if (index == -1) {
                 return;
             }
 
-            reroll(sender, target, index);
+            reroll(sender, target, period, index);
 
         } else help(sender);
     }
@@ -52,9 +60,9 @@ public class ARerollCommand extends AdminCommandBase {
      * @param target the player to reroll the quest for
      * @param index  the index of the quest to reroll
      */
-    private void reroll(CommandSender sender, Player target, int index) {
+    private void reroll(CommandSender sender, Player target, QuestPeriod period, int index) {
         final String playerName = target.getName();
-        final PlayerQuests playerQuests = getLoadedPlayerQuests(sender, target);
+        final PlayerQuests playerQuests = getLoadedPlayerQuests(sender, target, period);
         if (playerQuests == null) return;
 
         if (index < 1 || index > playerQuests.getQuests().size()) {
@@ -65,7 +73,7 @@ public class ARerollCommand extends AdminCommandBase {
         int count = playerQuests.getRecentlyRolled();
         if (playerQuests.rerollQuest(index - 1, target, true)) {
             confirmationToSender(sender, index, playerName);
-            confirmationToTarget(index, RerollMaximum.getMaxRerolls()-count, target);
+            confirmationToTarget(index, QuestPeriods.get(period).rerollMaximum()-count, target);
         }
     }
 
@@ -99,12 +107,16 @@ public class ARerollCommand extends AdminCommandBase {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, String[] args) {
         if (args.length == 3) {
+            return QuestPeriods.getEnabledPeriods().stream().map(QuestPeriod::getConfigKey).toList();
+        }
+        if (args.length == 4) {
             final Player target = (args.length >= 2) ? org.bukkit.Bukkit.getPlayerExact(args[1]) : null;
             if (target == null) {
                 return Collections.emptyList();
             }
 
-            final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(target.getName());
+            final QuestPeriod period = QuestPeriod.fromString(args[2]).orElse(QuestPeriod.DAILY);
+            final PlayerQuests playerQuests = QuestsManager.getPlayerQuests(target.getName(), period);
             if (playerQuests == null) {
                 return Collections.emptyList();
             }
@@ -116,7 +128,7 @@ public class ARerollCommand extends AdminCommandBase {
             return questNumbers;
         }
 
-        if (args.length >= 4) {
+        if (args.length >= 5) {
             return Collections.emptyList();
         }
 

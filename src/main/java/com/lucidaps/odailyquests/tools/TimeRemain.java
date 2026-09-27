@@ -3,6 +3,8 @@ package com.lucidaps.odailyquests.tools;
 import com.lucidaps.odailyquests.quests.player.QuestsManager;
 
 import com.lucidaps.odailyquests.configuration.essentials.RenewInterval;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.configuration.essentials.TimestampMode;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
 
@@ -20,31 +22,13 @@ public class TimeRemain {
      * @return the time remaining as a formatted String.
      */
     public static String timeRemain(String playerName) {
-        long restMillis;
+        return timeRemain(playerName, QuestPeriods.getDefaultPeriod());
+    }
 
-        final Duration renewInterval = RenewInterval.getRenewInterval();
-        if (renewInterval == null || renewInterval.isZero() || renewInterval.isNegative()) {
-            return formatTimeRemain(0);
-        }
-
-        if (TimestampMode.getTimestampMode() == 1) {
-            final RenewSchedule.Settings s = RenewSchedule.settings();
-            if (!RenewSchedule.isValid(s)) return formatTimeRemain(0);
-
-            final ZonedDateTime now = ZonedDateTime.now(s.zone());
-            restMillis = RenewSchedule.millisUntilNext(now, s);
-        } else {
-            final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(playerName);
-            if (playerQuests == null) {
-                return formatTimeRemain(0);
-            }
-
-            final long timestamp = playerQuests.getTimestamp();
-            restMillis = (timestamp + renewInterval.toMillis()) - System.currentTimeMillis();
-            restMillis = Math.max(0L, restMillis);
-        }
-
-        return formatTimeRemain(restMillis);
+    public static String timeRemain(String playerName, QuestPeriod period) {
+        final PlayerQuests playerQuests = QuestsManager.getPlayerQuests(playerName, period);
+        final long timestamp = playerQuests == null ? System.currentTimeMillis() : playerQuests.getTimestamp();
+        return formatTimeRemain(QuestPeriods.millisUntilRenewal(period, timestamp));
     }
 
     private static String formatTimeRemain(long rest) {

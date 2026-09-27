@@ -4,6 +4,8 @@ import com.lucidaps.odailyquests.ODailyQuests;
 import com.lucidaps.odailyquests.commands.interfaces.holder.CategoryHolder;
 import com.lucidaps.odailyquests.commands.interfaces.playerinterface.items.Buttons;
 import com.lucidaps.odailyquests.files.implementations.ConfigurationFile;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.quests.categories.CategoriesLoader;
 import com.lucidaps.odailyquests.quests.types.AbstractQuest;
 import com.lucidaps.odailyquests.tools.TextFormatter;
@@ -37,7 +39,7 @@ public class QuestsInterfaces {
     private String previousPageItemName;
 
     private final List<ItemStack> emptyCaseItems = new ArrayList<>();
-    private final Map<String, Pair<String, List<Inventory>>> categorizedInterfaces = new HashMap<>();
+    private final Map<QuestPeriod, Map<String, Pair<String, List<Inventory>>>> categorizedInterfaces = new EnumMap<>(QuestPeriod.class);
 
     public QuestsInterfaces(ConfigurationFile configurationFile, Buttons buttons) {
         this.configurationFile = configurationFile;
@@ -64,7 +66,9 @@ public class QuestsInterfaces {
         categorizedInterfaces.clear();
         emptyCaseItems.clear();
 
-        for (String category : CategoriesLoader.getAllCategories().keySet()) {
+        for (QuestPeriod period : QuestPeriods.getEnabledPeriods()) {
+            categorizedInterfaces.put(period, new HashMap<>());
+            for (String category : CategoriesLoader.getAllCategories(period).keySet()) {
             final ConfigurationSection categorySection = section.getConfigurationSection(category);
             if (categorySection == null) {
                 PluginLogger.error("Impossible to find the interface settings for category " + category + ".");
@@ -75,8 +79,9 @@ public class QuestsInterfaces {
             final ItemStack emptyCaseItem = new ItemStack(Material.valueOf(categorySection.getString(EMPTY_ITEM)));
             emptyCaseItems.add(emptyCaseItem);
 
-            int neededInventories = (int) Math.ceil(CategoriesLoader.getCategoryByName(category).size() / INV_SIZE);
-            loadSelectedInterface(category, TextFormatter.format(categorySection.getString("inventory_name")), emptyCaseItem, neededInventories, CategoriesLoader.getCategoryByName(category));
+            int neededInventories = Math.max(1, (int) Math.ceil(CategoriesLoader.getCategoryByName(period, category).size() / INV_SIZE));
+            loadSelectedInterface(period, category, TextFormatter.format(categorySection.getString("inventory_name")), emptyCaseItem, neededInventories, CategoriesLoader.getCategoryByName(period, category));
+            }
         }
     }
 
@@ -88,9 +93,13 @@ public class QuestsInterfaces {
      * @param quests        list of quests.
      */
     public void loadSelectedInterface(String category, String inventoryName, ItemStack emptyCaseItem, int neededInventories, List<AbstractQuest> quests) {
-        final List<Inventory> questsInventories = createInventories(category, inventoryName, neededInventories);
+        loadSelectedInterface(QuestPeriod.DAILY, category, inventoryName, emptyCaseItem, neededInventories, quests);
+    }
+
+    public void loadSelectedInterface(QuestPeriod period, String category, String inventoryName, ItemStack emptyCaseItem, int neededInventories, List<AbstractQuest> quests) {
+        final List<Inventory> questsInventories = createInventories(period, category, inventoryName, neededInventories);
         populateInventories(questsInventories, emptyCaseItem, quests);
-        categorizedInterfaces.put(category, new Pair<>(inventoryName, questsInventories));
+        categorizedInterfaces.computeIfAbsent(period, ignored -> new HashMap<>()).put(category, new Pair<>(inventoryName, questsInventories));
         PluginLogger.fine("Categorized quests interface named " + inventoryName + " successfully loaded.");
     }
 
@@ -102,11 +111,11 @@ public class QuestsInterfaces {
      * @param neededInventories number of inventories needed.
      * @return list of inventories.
      */
-    private List<Inventory> createInventories(String category, String inventoryName, int neededInventories) {
+    private List<Inventory> createInventories(QuestPeriod period, String category, String inventoryName, int neededInventories) {
         final List<Inventory> inventories = new ArrayList<>();
         for (int i = 0; i < neededInventories; i++) {
-            final CategoryHolder holder = new CategoryHolder(i, category);
-            final Inventory inv = Bukkit.createInventory(holder, 54, inventoryName + " - " + (i + 1));
+            final CategoryHolder holder = new CategoryHolder(i, category, period);
+            final Inventory inv = Bukkit.createInventory(holder, 54, inventoryName.replace("%period%", period.getDisplayName()) + " - " + (i + 1));
 
             if (i > 0) inv.setItem(45, buttons.getPreviousButton());
             if (i < neededInventories - 1) inv.setItem(53, buttons.getNextButton());
@@ -182,12 +191,17 @@ public class QuestsInterfaces {
      * @return inventory for the specified category and page.
      */
     public Inventory getInterfacePage(String category, int page, Player player) {
-        if (!categorizedInterfaces.containsKey(category)) {
+        return getInterfacePage(QuestPeriods.getDefaultPeriod(), category, page, player);
+    }
+
+    public Inventory getInterfacePage(QuestPeriod period, String category, int page, Player player) {
+        final Map<String, Pair<String, List<Inventory>>> interfaces = categorizedInterfaces.getOrDefault(period, Map.of());
+        if (!interfaces.containsKey(category)) {
             PluginLogger.error("Impossible to find the interface for category " + category + ". The reason is probably a misconfiguration and should be explicitly mentioned in the plugin startup logs.");
             return null;
         }
 
-        final Inventory inventory = categorizedInterfaces.get(category).second().get(page);
+        final Inventory inventory = interfaces.get(category).second().get(page);
 
         for (int i = 0; i < inventory.getSize(); i++) {
             final ItemStack item = inventory.getItem(i);
@@ -258,12 +272,24 @@ public class QuestsInterfaces {
         return getInterfacePage(category, 0, player);
     }
 
+    public Inventory getInterfaceFirstPage(QuestPeriod period, String category, Player player) {
+        return getInterfacePage(period, category, 0, player);
+    }
+
     public Inventory getInterfaceNextPage(String category, int page, Player player) {
         return getInterfacePage(category, page + 1, player);
     }
 
+    public Inventory getInterfaceNextPage(QuestPeriod period, String category, int page, Player player) {
+        return getInterfacePage(period, category, page + 1, player);
+    }
+
     public Inventory getInterfacePreviousPage(String category, int page, Player player) {
         return getInterfacePage(category, page - 1, player);
+    }
+
+    public Inventory getInterfacePreviousPage(QuestPeriod period, String category, int page, Player player) {
+        return getInterfacePage(period, category, page - 1, player);
     }
 
     public boolean isEmptyCaseItem(ItemStack itemStack) {

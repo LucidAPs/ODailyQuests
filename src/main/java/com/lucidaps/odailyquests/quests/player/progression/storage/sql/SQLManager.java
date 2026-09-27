@@ -25,7 +25,10 @@ public abstract class SQLManager {
 
             try (final PreparedStatement playerStatement = connection.prepareStatement(Database.getMode() == StorageMode.MYSQL ? SQLQuery.MYSQL_CREATE_PLAYER_TABLE.getQuery() : SQLQuery.SQLITE_CREATE_PLAYER_TABLE.getQuery());
                  final PreparedStatement progressionStatement = connection.prepareStatement(Database.getMode() == StorageMode.MYSQL ? SQLQuery.MYSQL_CREATE_PROGRESSION_TABLE.getQuery() : SQLQuery.SQLITE_CREATE_PROGRESSION_TABLE.getQuery());
-                 final PreparedStatement categoryStatsStatement = connection.prepareStatement(Database.getMode() == StorageMode.MYSQL ? SQLQuery.MYSQL_CREATE_PLAYER_CATEGORY_STATS_TABLE.getQuery() : SQLQuery.SQLITE_CREATE_PLAYER_CATEGORY_STATS_TABLE.getQuery())) {
+                 final PreparedStatement categoryStatsStatement = connection.prepareStatement(Database.getMode() == StorageMode.MYSQL ? SQLQuery.MYSQL_CREATE_PLAYER_CATEGORY_STATS_TABLE.getQuery() : SQLQuery.SQLITE_CREATE_PLAYER_CATEGORY_STATS_TABLE.getQuery());
+                 final PreparedStatement periodStateStatement = connection.prepareStatement(Database.getMode() == StorageMode.MYSQL ? SQLQuery.MYSQL_CREATE_PERIOD_STATE_TABLE.getQuery() : SQLQuery.SQLITE_CREATE_PERIOD_STATE_TABLE.getQuery());
+                 final PreparedStatement periodProgressStatement = connection.prepareStatement(Database.getMode() == StorageMode.MYSQL ? SQLQuery.MYSQL_CREATE_PERIOD_PROGRESSION_TABLE.getQuery() : SQLQuery.SQLITE_CREATE_PERIOD_PROGRESSION_TABLE.getQuery());
+                 final PreparedStatement periodCategoryStatement = connection.prepareStatement(Database.getMode() == StorageMode.MYSQL ? SQLQuery.MYSQL_CREATE_PERIOD_CATEGORY_STATS_TABLE.getQuery() : SQLQuery.SQLITE_CREATE_PERIOD_CATEGORY_STATS_TABLE.getQuery())) {
 
                 playerStatement.execute();
                 Debugger.write("Table odq_player created or found in database.");
@@ -35,6 +38,11 @@ public abstract class SQLManager {
 
                 categoryStatsStatement.execute();
                 Debugger.write("Table odq_player_category_stats created or found in database.");
+
+                periodStateStatement.execute();
+                periodProgressStatement.execute();
+                periodCategoryStatement.execute();
+                Debugger.write("Period-aware quest tables created or found in database.");
             }
 
         } catch (SQLException e) {

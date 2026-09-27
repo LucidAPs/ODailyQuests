@@ -6,6 +6,7 @@ import com.lucidaps.odailyquests.tools.updater.database.updates.Update0to1;
 import com.lucidaps.odailyquests.tools.updater.database.updates.Update1to2;
 import com.lucidaps.odailyquests.tools.updater.database.updates.Update2to3;
 import com.lucidaps.odailyquests.tools.updater.database.updates.Update3to4;
+import com.lucidaps.odailyquests.tools.updater.database.updates.Update4to5;
 
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -24,6 +25,7 @@ public class DatabaseUpdateManager {
         updaters.put("2", new Update1to2(plugin));
         updaters.put("3", new Update2to3(plugin));
         updaters.put("4", new Update3to4(plugin));
+        updaters.put("5", new Update4to5(plugin));
     }
 
     public void runUpdates() {

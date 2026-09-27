@@ -5,6 +5,8 @@ import com.lucidaps.odailyquests.quests.player.QuestsManager;
 import com.lucidaps.odailyquests.commands.admin.AdminCommandBase;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.quests.categories.CategoriesLoader;
 import com.lucidaps.odailyquests.quests.categories.Category;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
@@ -80,7 +82,7 @@ public class SetCommand extends AdminCommandBase {
      */
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length < 5) {
+        if (args.length < 5 || args.length > 6) {
             help(sender);
             return;
         }
@@ -90,14 +92,22 @@ public class SetCommand extends AdminCommandBase {
             return;
         }
 
-        final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(target.getName());
+        final QuestPeriod period = args.length == 6
+                ? QuestPeriod.fromString(args[2]).orElse(null)
+                : QuestPeriods.getDefaultPeriod();
+        if (period == null || !QuestPeriods.isEnabled(period)) {
+            help(sender);
+            return;
+        }
+        final int offset = args.length == 6 ? 1 : 0;
+        final PlayerQuests playerQuests = QuestsManager.getPlayerQuests(target.getName(), period);
         if (playerQuests == null) {
             final String msg = QuestsMessages.PLAYER_QUESTS_NOT_LOADED.toString();
             if (msg != null) sender.sendMessage(msg);
             return;
         }
 
-        final int slotIndex = parseQuestIndex(sender, args[2]);
+        final int slotIndex = parseQuestIndex(sender, args[2 + offset]);
         if (slotIndex == -1) {
             return;
         }
@@ -107,15 +117,15 @@ public class SetCommand extends AdminCommandBase {
             return;
         }
 
-        final String categoryName = args[3];
-        if (!CategoriesLoader.hasCategory(categoryName)) {
+        final String categoryName = args[3 + offset];
+        if (!CategoriesLoader.hasCategory(period, categoryName)) {
             invalidCategory(sender);
             return;
         }
 
-        final String questId = args[4];
+        final String questId = args[4 + offset];
 
-        final Category category = CategoriesLoader.getCategoryByName(categoryName);
+        final Category category = CategoriesLoader.getCategoryByName(period, categoryName);
         final Optional<AbstractQuest> questOptional = findQuest(category, questId);
         if (questOptional.isEmpty()) {
             invalidQuestId(sender);
@@ -202,10 +212,19 @@ public class SetCommand extends AdminCommandBase {
     public List<String> onTabComplete(@NotNull CommandSender sender, String[] args) {
         return switch (args.length) {
             case 2 -> getOnlinePlayerNames();
-            case 3 -> getQuestNumbers(args[1]);
-            case 4 -> getCategoryNames();
-            case 5 -> getQuestIds(args[3]);
-            default -> args.length >= 6 ? Collections.emptyList() : null;
+            case 3 -> {
+                final List<String> values = new ArrayList<>(QuestPeriods.getEnabledPeriods().stream().map(QuestPeriod::getConfigKey).toList());
+                values.addAll(getQuestNumbers(args[1], QuestPeriods.getDefaultPeriod()));
+                yield values;
+            }
+            case 4 -> QuestPeriod.fromString(args[2]).isPresent()
+                    ? getQuestNumbers(args[1], QuestPeriod.fromString(args[2]).orElseThrow())
+                    : getCategoryNames(QuestPeriods.getDefaultPeriod());
+            case 5 -> QuestPeriod.fromString(args[2]).isPresent()
+                    ? getCategoryNames(QuestPeriod.fromString(args[2]).orElseThrow())
+                    : getQuestIds(QuestPeriods.getDefaultPeriod(), args[3]);
+            case 6 -> getQuestIds(QuestPeriod.fromString(args[2]).orElse(QuestPeriods.getDefaultPeriod()), args[4]);
+            default -> args.length >= 7 ? Collections.emptyList() : null;
         };
     }
 
@@ -227,9 +246,9 @@ public class SetCommand extends AdminCommandBase {
      * @return a list of integers from 1..N where N is the number of quests,
      * or an empty list if the player or their quests cannot be resolved.
      */
-    private List<String> getQuestNumbers(String playerName) {
+    private List<String> getQuestNumbers(String playerName, QuestPeriod period) {
         final Player target = Bukkit.getPlayerExact(playerName);
-        final PlayerQuests pq = (target != null) ? QuestsManager.getActiveQuests().get(target.getName()) : null;
+        final PlayerQuests pq = (target != null) ? QuestsManager.getPlayerQuests(target.getName(), period) : null;
         if (pq == null) return Collections.emptyList();
 
         final int size = pq.getQuests().size();
@@ -243,8 +262,8 @@ public class SetCommand extends AdminCommandBase {
     /**
      * @return a list of all registered category names
      */
-    private List<String> getCategoryNames() {
-        return new ArrayList<>(CategoriesLoader.getAllCategories().keySet());
+    private List<String> getCategoryNames(QuestPeriod period) {
+        return new ArrayList<>(CategoriesLoader.getAllCategories(period).keySet());
     }
 
     /**
@@ -253,10 +272,10 @@ public class SetCommand extends AdminCommandBase {
      * @param categoryName the name of the category
      * @return list of quest IDs or empty if the category is invalid
      */
-    private List<String> getQuestIds(String categoryName) {
-        if (!CategoriesLoader.hasCategory(categoryName)) return Collections.emptyList();
+    private List<String> getQuestIds(QuestPeriod period, String categoryName) {
+        if (!CategoriesLoader.hasCategory(period, categoryName)) return Collections.emptyList();
 
-        final Category category = CategoriesLoader.getCategoryByName(categoryName);
+        final Category category = CategoriesLoader.getCategoryByName(period, categoryName);
         if (category == null) return Collections.emptyList();
 
         final List<String> ids = new ArrayList<>();

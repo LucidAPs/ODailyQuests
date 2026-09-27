@@ -3,8 +3,10 @@ package com.lucidaps.odailyquests.commands.admin.handlers;
 import com.lucidaps.odailyquests.commands.admin.AdminCommandBase;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.quests.categories.CategoriesLoader;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
+import com.lucidaps.odailyquests.quests.player.QuestsManager;
 import com.lucidaps.odailyquests.tools.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -50,7 +52,7 @@ public class RemoveCommand extends AdminCommandBase {
             final String playerName = args[3];
             final String amountStr = args[4];
 
-            if (CategoriesLoader.getAllCategories().containsKey(category)) {
+            if (CategoriesLoader.getAllCategories(QuestPeriods.getDefaultPeriod()).containsKey(category)) {
                 final Pair<Player, Integer> playerAmount = getPlayerAndAmount(sender, playerName, amountStr);
                 if (playerAmount == null) return;
 
@@ -85,10 +87,9 @@ public class RemoveCommand extends AdminCommandBase {
     }
 
     private void removeTotalAmount(CommandSender sender, Player target, int amount) {
-        final PlayerQuests playerQuests = getLoadedPlayerQuests(sender, target);
-        if (playerQuests == null) return;
-
-        playerQuests.removeTotalAchievedQuests(amount);
+        if (!QuestsManager.isPlayerLoaded(target.getName())) return;
+        QuestsManager.setOverallLifetimeTotal(target.getName(), Math.max(
+                QuestsManager.getOverallLifetimeTotal(target.getName()) - amount, 0));
 
         sendAdminTotalMessage(sender, target.getName(), amount);
         sendTargetTotalMessage(target, amount);
@@ -139,14 +140,14 @@ public class RemoveCommand extends AdminCommandBase {
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase(REMOVE) && args[1].equalsIgnoreCase(TOTAL)) {
-            final Set<String> categories = CategoriesLoader.getAllCategories().keySet();
+            final Set<String> categories = CategoriesLoader.getAllCategories(QuestPeriods.getDefaultPeriod()).keySet();
             final List<String> completions = new ArrayList<>(categories);
 
             Bukkit.getOnlinePlayers().forEach(player -> completions.add(player.getName()));
             return completions;
         }
 
-        if (args.length == 4 && args[0].equalsIgnoreCase(REMOVE) && args[1].equalsIgnoreCase(TOTAL) && CategoriesLoader.hasCategory(args[2])) {
+        if (args.length == 4 && args[0].equalsIgnoreCase(REMOVE) && args[1].equalsIgnoreCase(TOTAL) && CategoriesLoader.hasCategory(QuestPeriods.getDefaultPeriod(), args[2])) {
             return null;
         }
 

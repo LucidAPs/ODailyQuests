@@ -3,6 +3,8 @@ package com.lucidaps.odailyquests.commands.admin.handlers;
 import com.lucidaps.odailyquests.commands.admin.AdminCommandBase;
 import com.lucidaps.odailyquests.commands.interfaces.playerinterface.PlayerQuestsInterface;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -30,6 +32,10 @@ public class OpenCommand extends AdminCommandBase {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
+        if (args.length < 2 || args.length > 3) {
+            help(sender);
+            return;
+        }
         final Player target = Bukkit.getPlayer(args[1]);
         if (target != null) {
             openTargetInventory(playerQuestsInterface, sender, args, target);
@@ -38,7 +44,10 @@ public class OpenCommand extends AdminCommandBase {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, String[] args) {
-        if (args.length >= 3) {
+        if (args.length == 3) {
+            return QuestPeriods.getEnabledPeriods().stream().map(QuestPeriod::getConfigKey).toList();
+        }
+        if (args.length >= 4) {
             return Collections.emptyList();
         }
 

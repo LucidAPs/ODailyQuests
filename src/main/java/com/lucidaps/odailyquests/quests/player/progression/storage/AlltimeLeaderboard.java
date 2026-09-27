@@ -221,14 +221,14 @@ public class AlltimeLeaderboard {
             entriesByUuid.put(entry.playerUuid(), entry);
         }
 
-        for (Map.Entry<String, PlayerQuests> activeEntry : QuestsManager.getActiveQuests().entrySet()) {
-            final Player player = Bukkit.getPlayerExact(activeEntry.getKey());
-            if (player == null || activeEntry.getValue() == null) continue;
+        for (String playerName : QuestsManager.getLoadedPlayers()) {
+            final Player player = Bukkit.getPlayerExact(playerName);
+            if (player == null) continue;
 
             entriesByUuid.put(player.getUniqueId(), new LeaderboardEntry(
                     player.getUniqueId(),
                     player.getName(),
-                    activeEntry.getValue().getTotalAchievedQuests()
+                    QuestsManager.getOverallLifetimeTotal(playerName)
             ));
         }
 

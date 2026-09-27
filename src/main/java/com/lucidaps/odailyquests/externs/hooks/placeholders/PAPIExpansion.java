@@ -2,6 +2,8 @@ package com.lucidaps.odailyquests.externs.hooks.placeholders;
 
 import com.lucidaps.odailyquests.commands.interfaces.playerinterface.PlayerQuestsInterface;
 import com.lucidaps.odailyquests.configuration.integrations.PapiPlaceholders;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.quests.categories.CategoriesLoader;
 import com.lucidaps.odailyquests.quests.categories.Category;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
@@ -74,6 +76,17 @@ public class PAPIExpansion extends PlaceholderExpansion {
         placeholdersList.add("%odailyquests_achieved%");
         placeholdersList.add("%odailyquests_drawin%");
 
+        for (QuestPeriod period : QuestPeriod.values()) {
+            final String prefix = "%odailyquests_" + period.getConfigKey() + "_";
+            placeholdersList.add(prefix + "total%");
+            placeholdersList.add(prefix + "achieved%");
+            placeholdersList.add(prefix + "drawin%");
+            placeholdersList.add(prefix + "name_<index>%");
+            placeholdersList.add(prefix + "desc_<index>_<line>%");
+            placeholdersList.add(prefix + "progress_<index>%");
+            placeholdersList.add(prefix + "progressbar_<index>%");
+        }
+
         placeholdersList.add("%odailyquests_name_");
         placeholdersList.add("%odailyquests_desc_");
         placeholdersList.add("%odailyquests_progress_");
@@ -87,6 +100,12 @@ public class PAPIExpansion extends PlaceholderExpansion {
         for (String categoryKey : categoryMap.keySet()) {
             placeholdersList.add("%odailyquests_" + categoryKey + "_");
             placeholdersList.add("%odailyquests_total_" + categoryKey + "%");
+        }
+        for (QuestPeriod period : QuestPeriod.values()) {
+            for (String categoryKey : CategoriesLoader.getAllCategories(period).keySet()) {
+                placeholdersList.add("%odailyquests_" + period.getConfigKey() + "_" + categoryKey + "_<index>%");
+                placeholdersList.add("%odailyquests_" + period.getConfigKey() + "_total_" + categoryKey + "%");
+            }
         }
 
         return placeholdersList;
@@ -103,20 +122,35 @@ public class PAPIExpansion extends PlaceholderExpansion {
         final String playerName = offlinePlayer.getName();
         if (playerName == null) return null;
 
-        if (!QuestsManager.getActiveQuests().containsKey(playerName)) return null;
+        if (!QuestsManager.isPlayerLoaded(playerName)) return null;
 
         final Player player = offlinePlayer.getPlayer();
         if (player == null) return null;
 
-        if (QuestLoaderUtils.isTimeToRenew(player, QuestsManager.getActiveQuests())) return null;
+        QuestPeriod period = QuestPeriods.getDefaultPeriod();
+        boolean periodQualified = false;
+        String scopedParams = params;
+        for (QuestPeriod candidate : QuestPeriod.values()) {
+            final String prefix = candidate.getConfigKey() + "_";
+            if (params.startsWith(prefix)) {
+                period = candidate;
+                periodQualified = true;
+                scopedParams = params.substring(prefix.length());
+                break;
+            }
+        }
+        if (!QuestPeriods.isEnabled(period)) return null;
+        if (QuestLoaderUtils.isTimeToRenew(player, period)) return null;
 
-        final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(playerName);
+        final PlayerQuests playerQuests = QuestsManager.getPlayerQuests(playerName, period);
         if (playerQuests == null) return null;
 
+        final QuestPeriod selectedPeriod = period;
+        final boolean selectedPeriodQualified = periodQualified;
         final Map<String, Function<String, String>> placeholders = new LinkedHashMap<>();
-        placeholders.put("total", placeholder -> getTotalAchievedQuests(placeholder, playerQuests));
+        placeholders.put("total", placeholder -> getTotalAchievedQuests(placeholder, playerName, selectedPeriod, selectedPeriodQualified, playerQuests));
         placeholders.put("achieved", placeholder -> String.valueOf(playerQuests.getAchievedQuests()));
-        placeholders.put("drawin", placeholder -> TimeRemain.timeRemain(playerName));
+        placeholders.put("drawin", placeholder -> TimeRemain.timeRemain(playerName, selectedPeriod));
         placeholders.put("interface", placeholder -> getInterfaceMessage(placeholder, player, playerQuests));
         placeholders.put("progressbar", placeholder -> getProgressBar(placeholder, playerQuests));
         placeholders.put("progress", placeholder -> String.valueOf(getPlayerQuestProgression(placeholder, playerQuests)));
@@ -128,12 +162,12 @@ public class PAPIExpansion extends PlaceholderExpansion {
         placeholders.put("requireddisplayname", placeholder -> getPlayerQuestDisplayName(placeholder, playerQuests));
 
         for (Map.Entry<String, Function<String, String>> entry : placeholders.entrySet()) {
-            if (params.startsWith(entry.getKey())) {
-                return entry.getValue().apply(params);
+            if (scopedParams.startsWith(entry.getKey())) {
+                return entry.getValue().apply(scopedParams);
             }
         }
 
-        return getQuestNameByCategory(params);
+        return getQuestNameByCategory(scopedParams, selectedPeriod);
     }
 
     /**
@@ -275,14 +309,16 @@ public class PAPIExpansion extends PlaceholderExpansion {
      * @param playerQuests the player's quests
      * @return the total achieved quests as a string, or an error message
      */
-    private String getTotalAchievedQuests(String p, PlayerQuests playerQuests) {
+    private String getTotalAchievedQuests(String p, String playerName, QuestPeriod period, boolean periodQualified, PlayerQuests playerQuests) {
         if (p.equals("total")) {
-            return String.valueOf(playerQuests.getTotalAchievedQuests());
+            return String.valueOf(periodQualified
+                    ? playerQuests.getTotalAchievedQuests()
+                    : QuestsManager.getOverallLifetimeTotal(playerName));
         }
 
         if (p.startsWith("total_")) {
             final String categoryName = p.substring("total_".length());
-            if (CategoriesLoader.getAllCategories().containsKey(categoryName)) {
+            if (CategoriesLoader.getAllCategories(period).containsKey(categoryName)) {
                 return String.valueOf(playerQuests.getTotalAchievedQuestsByCategory(categoryName));
             } else {
                 return INVALID_CATEGORY;
@@ -298,8 +334,8 @@ public class PAPIExpansion extends PlaceholderExpansion {
      * @param params the placeholder parameters
      * @return the quest name, or {@code null} if the category does not match
      */
-    private String getQuestNameByCategory(String params) {
-        final Map<String, Category> categoryMap = CategoriesLoader.getAllCategories();
+    private String getQuestNameByCategory(String params, QuestPeriod period) {
+        final Map<String, Category> categoryMap = CategoriesLoader.getAllCategories(period);
 
         for (Map.Entry<String, Category> entry : categoryMap.entrySet()) {
             if (params.startsWith(entry.getKey())) {

@@ -4,6 +4,8 @@ import com.lucidaps.odailyquests.commands.admin.AdminCommandBase;
 import com.lucidaps.odailyquests.commands.interfaces.playerinterface.PlayerQuestsInterface;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -40,7 +42,10 @@ public class AShowCommand extends AdminCommandBase {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, String[] args) {
-        if (args.length >= 3) {
+        if (args.length == 3) {
+            return QuestPeriods.getEnabledPeriods().stream().map(QuestPeriod::getConfigKey).toList();
+        }
+        if (args.length >= 4) {
             return Collections.emptyList();
         }
 

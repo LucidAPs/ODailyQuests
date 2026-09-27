@@ -66,11 +66,12 @@ public abstract class ProgressionLoader {
     }
 
     protected void sendQuestStatusMessage(Player player, int achievedQuests, PlayerQuests playerQuests) {
-        final String msg = (achievedQuests == playerQuests.getQuests().size()) ?
+        final String rawMessage = (achievedQuests == playerQuests.getQuests().size()) ?
                 QuestsMessages.ALL_QUESTS_ACHIEVED_CONNECT.getMessage(player.getName()) :
                 QuestsMessages.QUESTS_IN_PROGRESS.getMessage(player.getName());
 
-        if (msg != null && player.hasPermission(QuestsPermissions.QUESTS_PROGRESS.get())) {
+        if (rawMessage != null && player.hasPermission(QuestsPermissions.QUESTS_PROGRESS.get())) {
+            final String msg = rawMessage.replace("%period%", playerQuests.getPeriod().getDisplayName());
             double delay = JoinMessageDelay.getDelay() * 20;
             TaskScheduler.runSyncLater(() -> player.sendMessage(msg), (long) delay);
         }

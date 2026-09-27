@@ -3,6 +3,8 @@ package com.lucidaps.odailyquests.commands.admin.handlers;
 import com.lucidaps.odailyquests.commands.admin.AdminCommandBase;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.quests.categories.CategoriesLoader;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
 import com.lucidaps.odailyquests.quests.player.QuestsManager;
@@ -53,7 +55,7 @@ public class ResetCommand extends AdminCommandBase {
             }
         } else if (args.length == 4) {
             final String category = args[2];
-            if (!CategoriesLoader.getAllCategories().containsKey(category)) {
+            if (!CategoriesLoader.getAllCategories(QuestPeriods.getDefaultPeriod()).containsKey(category)) {
                 invalidCategory(sender);
                 return;
             }
@@ -69,7 +71,18 @@ public class ResetCommand extends AdminCommandBase {
     private void handleResetQuests(CommandSender sender, String[] args) {
         final Player target = getTargetPlayer(sender, args[2]);
         if (target != null) {
-            quests(sender, target);
+            if (args.length == 4 && args[3].equalsIgnoreCase("all")) {
+                for (QuestPeriod period : QuestPeriods.getEnabledPeriods()) quests(sender, target, period);
+                return;
+            }
+            final QuestPeriod period = args.length == 4
+                    ? QuestPeriod.fromString(args[3]).orElse(null)
+                    : QuestPeriods.getDefaultPeriod();
+            if (period == null || !QuestPeriods.isEnabled(period)) {
+                help(sender);
+                return;
+            }
+            quests(sender, target, period);
         }
     }
 
@@ -81,24 +94,26 @@ public class ResetCommand extends AdminCommandBase {
      * @param target the player to reset
      */
     public void quests(CommandSender sender, Player target) {
+        quests(sender, target, QuestPeriod.DAILY);
+    }
+
+    public void quests(CommandSender sender, Player target, QuestPeriod period) {
         final String playerName = target.getName();
-        final PlayerQuests playerQuests = getLoadedPlayerQuests(sender, target);
+        final PlayerQuests playerQuests = getLoadedPlayerQuests(sender, target, period);
         if (playerQuests == null) return;
 
         final Map<String, Integer> totalAchievedQuestsByCategory = playerQuests.getTotalAchievedQuestsByCategory();
         final int totalAchievedQuests = playerQuests.getTotalAchievedQuests();
 
-        QuestLoaderUtils.loadNewPlayerQuests(playerName, QuestsManager.getActiveQuests(), totalAchievedQuestsByCategory, totalAchievedQuests);
+        QuestLoaderUtils.loadNewPlayerQuests(playerName, period, totalAchievedQuestsByCategory, totalAchievedQuests);
 
         String msg = QuestsMessages.QUESTS_RENEWED_ADMIN.toString();
         if (msg != null) sender.sendMessage(msg.replace(TARGET, target.getName()));
     }
 
     private void resetTotal(CommandSender sender, Player target) {
-        final PlayerQuests playerQuests = getLoadedPlayerQuests(sender, target);
-        if (playerQuests == null) return;
-
-        playerQuests.setTotalAchievedQuests(0);
+        if (!QuestsManager.isPlayerLoaded(target.getName())) return;
+        QuestsManager.setOverallLifetimeTotal(target.getName(), 0);
 
         String msg = QuestsMessages.TOTAL_AMOUNT_RESET_ADMIN.toString();
         if (msg != null) sender.sendMessage(msg.replace(TARGET, target.getName()));
@@ -130,18 +145,24 @@ public class ResetCommand extends AdminCommandBase {
         }
 
         if (args.length == 3 && args[1].equalsIgnoreCase(TOTAL)) {
-            final Set<String> categories = CategoriesLoader.getAllCategories().keySet();
+            final Set<String> categories = CategoriesLoader.getAllCategories(QuestPeriods.getDefaultPeriod()).keySet();
             final List<String> suggestions = new ArrayList<>(categories);
 
             Bukkit.getOnlinePlayers().forEach(p -> suggestions.add(p.getName()));
             return suggestions;
         }
 
-        if (args.length == 4 && args[1].equalsIgnoreCase(TOTAL) && CategoriesLoader.getAllCategories().containsKey(args[2])) {
+        if (args.length == 4 && args[1].equalsIgnoreCase(TOTAL) && CategoriesLoader.getAllCategories(QuestPeriods.getDefaultPeriod()).containsKey(args[2])) {
             return null;
         }
 
-        if (args.length >= 4) {
+        if (args.length == 4 && args[1].equalsIgnoreCase(QUESTS)) {
+            final List<String> periods = new ArrayList<>(QuestPeriods.getEnabledPeriods().stream().map(QuestPeriod::getConfigKey).toList());
+            periods.add("all");
+            return periods;
+        }
+
+        if (args.length >= 5) {
             return Collections.emptyList();
         }
 

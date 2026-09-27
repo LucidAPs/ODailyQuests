@@ -27,9 +27,11 @@ public class InventoryClickListener implements Listener {
         final ItemMeta clickedItemMeta = clickedItem.getItemMeta();
         if (clickedItemMeta == null) return;
 
-        if (!(event.getView().getTopInventory().getHolder() instanceof CategoryHolder(int page, String category))) {
+        if (!(event.getView().getTopInventory().getHolder() instanceof CategoryHolder holder)) {
             return;
         }
+        final int page = holder.page();
+        final String category = holder.category();
 
         event.setCancelled(true);
 
@@ -42,10 +44,10 @@ public class InventoryClickListener implements Listener {
 
         if (clickedItemMeta.getDisplayName().equals(questsInterfaces.getNextPageItemName())) {
             player.closeInventory();
-            player.openInventory(questsInterfaces.getInterfaceNextPage(category, page, player));
+            player.openInventory(questsInterfaces.getInterfaceNextPage(holder.period(), category, page, player));
         } else if (clickedItemMeta.getDisplayName().equals(questsInterfaces.getPreviousPageItemName())) {
             player.closeInventory();
-            player.openInventory(questsInterfaces.getInterfacePreviousPage(category, page, player));
+            player.openInventory(questsInterfaces.getInterfacePreviousPage(holder.period(), category, page, player));
         }
     }
 }

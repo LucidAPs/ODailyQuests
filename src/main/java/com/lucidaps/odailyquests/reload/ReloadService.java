@@ -40,7 +40,7 @@ public class ReloadService {
 
     public void loadConnectedPlayerQuests(boolean sendStatusMessage) {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!QuestsManager.getActiveQuests().containsKey(player.getName())) {
+            if (!QuestsManager.isPlayerLoaded(player.getName())) {
                 plugin.getDatabaseManager().loadQuestsForPlayer(player.getName(), sendStatusMessage);
             }
         }
@@ -54,17 +54,17 @@ public class ReloadService {
     }
 
     public void saveConnectedPlayerQuests(boolean forceSync) {
-        final Map<String, PlayerQuests> activeQuests = new HashMap<>(QuestsManager.getActiveQuests());
-        for (Map.Entry<String, PlayerQuests> entry : activeQuests.entrySet()) {
-            final Player player = Bukkit.getPlayer(entry.getKey());
+        final java.util.Set<String> loadedPlayers = QuestsManager.getLoadedPlayers();
+        for (String playerName : loadedPlayers) {
+            final Player player = Bukkit.getPlayer(playerName);
             if (player == null) {
-                Debugger.write("Impossible to save progression for player " + entry.getKey() + " because the player is offline.");
-                PluginLogger.warn("Impossible to save progression for player " + entry.getKey() + " because the player is offline.");
+                Debugger.write("Impossible to save progression for player " + playerName + " because the player is offline.");
+                PluginLogger.warn("Impossible to save progression for player " + playerName + " because the player is offline.");
                 continue;
             }
 
-            plugin.getDatabaseManager().saveProgressionForPlayer(player.getName(), player.getUniqueId().toString(), entry.getValue(), forceSync);
-            QuestsManager.getActiveQuests().remove(entry.getKey());
+            plugin.getDatabaseManager().saveProgressionForPlayer(player.getName(), player.getUniqueId().toString(), forceSync);
+            QuestsManager.removePlayer(playerName);
         }
     }
 

@@ -1,6 +1,8 @@
 package com.lucidaps.odailyquests.commands.player;
 
 import com.lucidaps.odailyquests.enums.QuestsMessages;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
 import com.lucidaps.odailyquests.quests.player.QuestsManager;
 import org.bukkit.command.CommandSender;
@@ -20,7 +22,11 @@ import java.util.List;
 public abstract class PlayerCommandBase extends PlayerMessages implements PlayerCommand, PlayerCommandCompleter {
 
     protected PlayerQuests getLoadedPlayerQuests(Player player) {
-        final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(player.getName());
+        return getLoadedPlayerQuests(player, QuestPeriods.getDefaultPeriod());
+    }
+
+    protected PlayerQuests getLoadedPlayerQuests(Player player, QuestPeriod period) {
+        final PlayerQuests playerQuests = QuestsManager.getPlayerQuests(player.getName(), period);
         if (playerQuests == null) {
             final String msg = QuestsMessages.PLAYER_QUESTS_NOT_LOADED.toString();
             if (msg != null) player.sendMessage(msg);

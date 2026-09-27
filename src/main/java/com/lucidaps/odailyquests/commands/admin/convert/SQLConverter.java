@@ -1,15 +1,20 @@
 package com.lucidaps.odailyquests.commands.admin.convert;
 
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
 import com.lucidaps.odailyquests.quests.player.progression.Progression;
 import com.lucidaps.odailyquests.quests.player.progression.QuestLoaderUtils;
 import com.lucidaps.odailyquests.quests.player.progression.storage.sql.SQLManager;
+import com.lucidaps.odailyquests.quests.player.progression.storage.PlayerQuestData;
 import com.lucidaps.odailyquests.quests.types.AbstractQuest;
 import com.lucidaps.odailyquests.tools.PluginLogger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.LinkedHashMap;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class SQLConverter {
@@ -34,22 +39,58 @@ public abstract class SQLConverter {
             );
             if (playerSection == null) return;
 
-            final long timestamp = playerSection.getLong(".timestamp");
-            final int achievedQuests = playerSection.getInt(".achievedQuests");
-            final int totalAchievedQuests = playerSection.getInt(".totalAchievedQuests");
+            final int overallTotal = playerSection.contains("overallTotalAchievedQuests")
+                    ? playerSection.getInt("overallTotalAchievedQuests")
+                    : playerSection.getInt("totalAchievedQuests");
+            final EnumMap<QuestPeriod, PlayerQuests> periods = new EnumMap<>(QuestPeriod.class);
+            final ConfigurationSection periodSections = playerSection.getConfigurationSection("periods");
 
-            final ConfigurationSection questsSection = getRequiredSection(
-                    playerSection, ".quests", "SQLConverter - Missing quests section for " + playerUuid
+            if (periodSections == null) {
+                final PlayerQuests daily = loadPeriod(playerUuid, QuestPeriod.DAILY, playerSection);
+                if (daily == null) return;
+                periods.put(QuestPeriod.DAILY, daily);
+            } else {
+                for (QuestPeriod period : QuestPeriods.getEnabledPeriods()) {
+                    final ConfigurationSection periodSection = periodSections.getConfigurationSection(period.getConfigKey());
+                    if (periodSection == null) continue;
+                    final PlayerQuests quests = loadPeriod(playerUuid, period, periodSection);
+                    if (quests == null) return;
+                    periods.put(period, quests);
+                }
+            }
+
+            sqlManager.getSaveProgressionSQL().saveProgression(
+                    playerUuid, playerUuid, new PlayerQuestData(overallTotal, periods), true
             );
-            if (questsSection == null) return;
-
-            final LinkedHashMap<AbstractQuest, Progression> quests = loadQuests(playerUuid, questsSection);
-            if (quests == null) return;
-
-            final PlayerQuests playerQuests = buildPlayerQuests(timestamp, achievedQuests, totalAchievedQuests, quests);
-
-            sqlManager.getSaveProgressionSQL().saveProgression(playerUuid, playerUuid, playerQuests, true);
         }
+    }
+
+    private PlayerQuests loadPeriod(String playerUuid, QuestPeriod period, ConfigurationSection section) {
+        final ConfigurationSection questsSection = getRequiredSection(
+                section, ".quests", "SQLConverter - Missing " + period.getDisplayName() + " quests section for " + playerUuid
+        );
+        if (questsSection == null) return null;
+
+        final LinkedHashMap<AbstractQuest, Progression> quests = loadQuests(playerUuid, period, questsSection);
+        if (quests == null) return null;
+
+        final PlayerQuests playerQuests = buildPlayerQuests(
+                period,
+                section.getLong(".timestamp"),
+                section.getInt(".achievedQuests"),
+                section.getInt(".totalAchievedQuests"),
+                quests
+        );
+        playerQuests.setRecentRerolls(section.contains("recentRerolls")
+                ? section.getInt("recentRerolls")
+                : section.getInt("recentRolls"));
+        final ConfigurationSection totals = section.getConfigurationSection("totalAchievedQuestsByCategory");
+        if (totals != null) {
+            final Map<String, Integer> values = new HashMap<>();
+            for (String category : totals.getKeys(false)) values.put(category, totals.getInt(category));
+            playerQuests.setTotalAchievedQuestsByCategory(values);
+        }
+        return playerQuests;
     }
 
     /**
@@ -59,7 +100,7 @@ public abstract class SQLConverter {
      * @param questsSection the configuration section containing quests data
      * @return a map of quest -> progression, or null if a critical error occurred
      */
-    private LinkedHashMap<AbstractQuest, Progression> loadQuests(String playerUuid, ConfigurationSection questsSection) {
+    private LinkedHashMap<AbstractQuest, Progression> loadQuests(String playerUuid, QuestPeriod period, ConfigurationSection questsSection) {
         final LinkedHashMap<AbstractQuest, Progression> quests = new LinkedHashMap<>();
 
         for (String questKey : questsSection.getKeys(false)) {
@@ -74,6 +115,7 @@ public abstract class SQLConverter {
             final String categoryName = progressionSection.getString(".category");
 
             final AbstractQuest quest = QuestLoaderUtils.findQuest(
+                    period,
                     playerUuid,
                     categoryName,
                     questIndex,
@@ -85,6 +127,9 @@ public abstract class SQLConverter {
                         + ", index=" + questIndex + ", key=" + questKey + ")");
                 return null;
             }
+
+            final int selectedRequired = progressionSection.getInt(".selectedRequired", -1);
+            if (selectedRequired >= 0) progression.setSelectedRequiredIndex(selectedRequired);
 
             quests.put(quest, progression);
         }
@@ -122,6 +167,7 @@ public abstract class SQLConverter {
      * @return the created {@link PlayerQuests}
      */
     private PlayerQuests buildPlayerQuests(
+            QuestPeriod period,
             long timestamp,
             int achievedQuests,
             int totalAchievedQuests,
@@ -137,7 +183,7 @@ public abstract class SQLConverter {
             }
         }
 
-        final PlayerQuests playerQuests = new PlayerQuests(timestamp, quests);
+        final PlayerQuests playerQuests = new PlayerQuests(period, timestamp, quests);
         playerQuests.setAchievedQuests(achievedQuests);
         playerQuests.setTotalAchievedQuests(totalAchievedQuests);
         return playerQuests;

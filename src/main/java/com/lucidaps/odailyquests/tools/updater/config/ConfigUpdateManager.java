@@ -7,6 +7,7 @@ import com.lucidaps.odailyquests.tools.updater.config.updates.Update223to224;
 import com.lucidaps.odailyquests.tools.updater.config.updates.Update225to230;
 import com.lucidaps.odailyquests.tools.updater.config.updates.Update230to300;
 import com.lucidaps.odailyquests.tools.updater.config.updates.Update301to302;
+import com.lucidaps.odailyquests.tools.updater.config.updates.QuestPeriodsBootstrap;
 
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -45,6 +46,10 @@ public class ConfigUpdateManager {
                 updater.apply(plugin, currentVersion);
             }
         }
+
+        // This feature is safe to bootstrap independently of the release number:
+        // old top-level settings remain Daily and the new periods start disabled.
+        new QuestPeriodsBootstrap(plugin).applyIfMissing();
 
         plugin.saveConfig();
     }

@@ -9,6 +9,8 @@ import com.lucidaps.odailyquests.configuration.functionalities.CompleteOnlyOnCli
 import com.lucidaps.odailyquests.configuration.functionalities.DisabledWorlds;
 import com.lucidaps.odailyquests.configuration.functionalities.progression.ProgressionMessage;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.externs.hooks.Protection;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
 import com.lucidaps.odailyquests.quests.player.QuestsManager;
@@ -71,7 +73,7 @@ public class PlayerProgressor {
      * @param questType the quest type to set the progression for
      */
     public void setPlayerQuestProgression(Event event, Player player, int amount, String questType) {
-        if (QuestsManager.getActiveQuests().containsKey(player.getName())) {
+        if (QuestsManager.isPlayerLoaded(player.getName())) {
             Debugger.write("Active quests contain " + player.getName() + ".");
             checkForProgress(event, player, amount, questType);
         }
@@ -86,17 +88,21 @@ public class PlayerProgressor {
      * @param questType the quest type to check for
      */
     private void checkForProgress(Event event, Player player, int amount, String questType) {
-        final PlayerQuests activePlayerQuests = QuestsManager.getActiveQuests().get(player.getName());
-        if (activePlayerQuests == null) return;
+        for (QuestPeriod period : QuestPeriods.getEnabledPeriods()) {
+            if (QuestLoaderUtils.isTimeToRenew(player, period)) continue;
 
-        final Map<AbstractQuest, Progression> playerQuests = activePlayerQuests.getQuests();
-        for (Map.Entry<AbstractQuest, Progression> entry : playerQuests.entrySet()) {
-            final AbstractQuest quest = entry.getKey();
-            if (quest.getQuestType().equals(questType)) {
-                final Progression progression = entry.getValue();
-                if (!progression.isAchieved() && quest.canProgress(event, progression)) {
-                    actionQuest(player, progression, quest, amount);
-                    if (!Synchronization.isSynchronised()) break;
+            final PlayerQuests activePlayerQuests = QuestsManager.getPlayerQuests(player.getName(), period);
+            if (activePlayerQuests == null) continue;
+
+            final Map<AbstractQuest, Progression> playerQuests = activePlayerQuests.getQuests();
+            for (Map.Entry<AbstractQuest, Progression> entry : playerQuests.entrySet()) {
+                final AbstractQuest quest = entry.getKey();
+                if (quest.getQuestType().equals(questType)) {
+                    final Progression progression = entry.getValue();
+                    if (!progression.isAchieved() && quest.canProgress(event, progression)) {
+                        actionQuest(player, progression, quest, amount);
+                        if (!Synchronization.isSynchronised()) break;
+                    }
                 }
             }
         }
@@ -125,7 +131,7 @@ public class PlayerProgressor {
      * @param amount      amount of progression
      */
     private void runProgress(Player player, Progression progression, AbstractQuest quest, int amount) {
-        if (QuestLoaderUtils.isTimeToRenew(player, QuestsManager.getActiveQuests())) return;
+        if (QuestLoaderUtils.isTimeToRenew(player, quest.getPeriod())) return;
         if (!isAllowedToProgress(player, quest)) return;
 
         final String questName = QuestPlaceholders.replaceQuestPlaceholders(quest.getQuestName(), player, quest, progression, null, null);

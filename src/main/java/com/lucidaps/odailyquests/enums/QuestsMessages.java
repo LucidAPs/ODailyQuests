@@ -13,23 +13,24 @@ public enum QuestsMessages {
 
     PLAYER_HELP("player_help", """
             &3&m---&3 Player commands &3&m---
-            &3> &b/dq, /dq me &3- &7see your own quests
-            &3> &b/dq reroll <index> &3- &7reroll a quest (requires permission)
-            &3> &b/dq show <category> &3- &7see the quests of a category
+            &3> &b/dq, /dq me [daily|weekly|monthly] &3- &7see your own quests
+            &3> &b/dq reroll [period] <index> &3- &7reroll a quest (requires permission)
+            &3> &b/dq show [period] <category> &3- &7see the quests of a category
             """),
     ADMIN_HELP("admin_help", """
             &c&m---&c Admin commands &c&m---
-            &3> &b/dqa complete <player> <index> &3- &7complete a player quest
+            &3> &b/dqa complete <player> [period] <index> &3- &7complete a player quest
             &3> &b/dqa customcomplete <player> <type> <amount> &3- &7complete a player quest from a custom type
-            &3> &b/dqa reset <quests/total> <player> &3- &7draw new quests for a player, or reset his total number of achieved quests
+            &3> &b/dqa reset quests <player> [period|all] &3- &7draw new quests for a player
+            &3> &b/dqa reset total <player> &3- &7reset the overall lifetime total
             &3> &b/dqa add total <player> <amount> &3- &7add a number of achieved quests to a player
             &3> &b/dqa add total <category> <player> <amount> &3- &7add a number of achieved quests in a specific category to a player
             &3> &b/dqa remove total <player> <amount> &3- &7remove a number of achieved quests to a player
             &3> &b/dqa remove total <category> <player> <amount> &3- &7remove a number of achieved quests in a specific category to a player
-            &3> &b/dqa reroll <player> <index> &3- &7draw a new quest for a player, at a specific index
-            &3> &b/dqa set <player> <slot> <category> <file index> &3- &7assign a specific quest to a player
-            &3> &b/dqa show <player> &3- &7see quests of a player
-            &3> &b/dqa open <player> &3- &7force a player to open the quest interface
+            &3> &b/dqa reroll <player> [period] <index> &3- &7draw a new quest for a player, at a specific index
+            &3> &b/dqa set <player> [period] <slot> <category> <file index> &3- &7assign a specific quest to a player
+            &3> &b/dqa show <player> [period] &3- &7see quests of a player
+            &3> &b/dqa open <player> [period] &3- &7force a player to open the quest interface
             &3> &b/dqa convert <old format> <new format> &3- &7convert the storage format of the plugin
             """),
 
@@ -45,9 +46,9 @@ public enum QuestsMessages {
     PLAYER_QUESTS_NOT_LOADED("player_quests_not_loaded", "&cThe player's quests are not loaded yet. Please try again in a moment."),
 
     QUEST_ALREADY_ACHIEVED("already_achieved", "&cThis quest is already achieved."),
-    QUESTS_IN_PROGRESS("quests_in_progress", "&eYou still have daily quests to complete !"),
-    ALL_QUESTS_ACHIEVED_CONNECT("all_quests_achieved_connect", "&aYou have completed all your daily quests !"),
-    QUESTS_RENEWED("quests_renewed", "&aYou have new daily quests to complete !"),
+    QUESTS_IN_PROGRESS("quests_in_progress", "&eYou still have %period% quests to complete !"),
+    ALL_QUESTS_ACHIEVED_CONNECT("all_quests_achieved_connect", "&aYou have completed all your %period% quests !"),
+    QUESTS_RENEWED("quests_renewed", "&aYou have new %period% quests to complete !"),
     QUESTS_RENEWED_ADMIN("quests_renewed_admin", "&eYou have reset the quests of %target%."),
     QUEST_REROLLED("quest_rerolled", "&aYou have rerolled your quest number %index% -- %remaining% rerolls left!"),
     QUEST_REROLLED_ADMIN("quest_rerolled_admin", "&eYou have rerolled the quest number %index% of %target%."),
@@ -67,7 +68,7 @@ public enum QuestsMessages {
     TOTAL_CATEGORY_RESET_ADMIN("total_category_reset_admin", "&e%target%'s total number of completed quests in the category %category% has been reset by an admin."),
     TOTAL_CATEGORY_RESET_TARGET("total_category_reset_target", "&eYour total number of completed quests in the category %category% has been reset by an admin."),
     QUEST_ACHIEVED("quest_achieved", "&aYou finished the quest &e%questName%&a, well done !"),
-    ALL_QUESTS_ACHIEVED("all_quests_achieved", "&aYou have finished all your daily quests, well done !"),
+    ALL_QUESTS_ACHIEVED("all_quests_achieved", "&aYou have finished all your %period% quests, well done !"),
     CATEGORY_QUESTS_ACHIEVED("category_quests_achieved", "&aYou have completed all your %category% quests!"),
     NOT_ENOUGH_ITEM("not_enough_items", "&cYou don't have the required amount to complete this quest."),
 
@@ -82,7 +83,7 @@ public enum QuestsMessages {
     REWARD_POINTS("reward_points", "&aYou receive &e%rewardAmount% &bpoints&a."),
     REWARD_COINS_ENGINE("reward_coins_engine", "&aYou receive &e%rewardAmount% &b%currencyName%&a."),
 
-    NEW_DAY("new_day", "&6It's a new day!"),
+    NEW_DAY("new_day", "&6Your %period% quests have reset!"),
     TOO_FAR_FROM_LOCATION("too_far", "&cYou are too far from the required location."),
     BAD_WORLD_LOCATION("bad_world", "&cYou are in the wrong world."),
 

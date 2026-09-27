@@ -2,6 +2,8 @@ package com.lucidaps.odailyquests.commands.player.handlers;
 
 import com.lucidaps.odailyquests.commands.player.PlayerCommandBase;
 import com.lucidaps.odailyquests.commands.interfaces.QuestsInterfaces;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
 import com.lucidaps.odailyquests.quests.categories.CategoriesLoader;
@@ -36,12 +38,19 @@ public class PShowCommand extends PlayerCommandBase {
 
     @Override
     public void execute(Player player, String[] args) {
-        if (args.length != 2) {
+        if (args.length < 2 || args.length > 3) {
             help(player);
             return;
         }
 
-        openCategory(player, args[1]);
+        final QuestPeriod period = args.length == 3
+                ? QuestPeriod.fromString(args[1]).orElse(null)
+                : QuestPeriods.getDefaultPeriod();
+        if (period == null || !QuestPeriods.isEnabled(period)) {
+            help(player);
+            return;
+        }
+        openCategory(player, period, args[args.length - 1]);
     }
 
     /**
@@ -49,8 +58,8 @@ public class PShowCommand extends PlayerCommandBase {
      * @param player the player who wants to open the category.
      * @param category the category.
      */
-    private void openCategory(Player player, String category) {
-        if (!CategoriesLoader.hasCategory(category)) {
+    private void openCategory(Player player, QuestPeriod period, String category) {
+        if (!CategoriesLoader.hasCategory(period, category)) {
             invalidCategory(player);
             return;
         }
@@ -60,7 +69,7 @@ public class PShowCommand extends PlayerCommandBase {
             return;
         }
 
-        final Inventory inventory = questsInterfaces.getInterfaceFirstPage(category, player);
+        final Inventory inventory = questsInterfaces.getInterfaceFirstPage(period, category, player);
         if (inventory == null) {
             final String msg = QuestsMessages.CONFIGURATION_ERROR.toString();
             if (msg != null) player.sendMessage(msg);
@@ -73,7 +82,11 @@ public class PShowCommand extends PlayerCommandBase {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, String[] args) {
         if (args.length == 2) {
-            List<String> categories = new ArrayList<>(CategoriesLoader.getAllCategories().keySet());
+            return QuestPeriods.getEnabledPeriods().stream().map(QuestPeriod::getConfigKey).toList();
+        }
+        if (args.length == 3) {
+            final QuestPeriod period = QuestPeriod.fromString(args[1]).orElse(QuestPeriod.DAILY);
+            List<String> categories = new ArrayList<>(CategoriesLoader.getAllCategories(period).keySet());
             Collections.sort(categories);
             return categories;
         }

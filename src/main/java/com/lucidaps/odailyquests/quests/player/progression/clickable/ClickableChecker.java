@@ -1,6 +1,8 @@
 package com.lucidaps.odailyquests.quests.player.progression.clickable;
 
 import com.lucidaps.odailyquests.quests.player.QuestsManager;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 
 import com.lucidaps.odailyquests.configuration.essentials.Debugger;
 import com.lucidaps.odailyquests.configuration.functionalities.CompleteOnlyOnClick;
@@ -32,12 +34,21 @@ public abstract class ClickableChecker extends PlayerProgressor {
 
         if (isWorldDisabled(player.getWorld().getName())) return;
 
-        final PlayerQuests activePlayerQuests = QuestsManager.getActiveQuests().get(player.getName());
-        if (activePlayerQuests == null) {
+        if (!QuestsManager.isPlayerLoaded(player.getName())) {
             Debugger.write("ClickableChecker: quests are not loaded for " + player.getName() + ".");
             return;
         }
 
+        final Iterable<QuestPeriod> periods = context.getPeriod() == null
+                ? QuestPeriods.getEnabledPeriods()
+                : java.util.List.of(context.getPeriod());
+        for (QuestPeriod period : periods) {
+            final PlayerQuests activePlayerQuests = QuestsManager.getPlayerQuests(player.getName(), period);
+            if (activePlayerQuests != null) processPeriod(activePlayerQuests, context, clickedItem, villager);
+        }
+    }
+
+    private void processPeriod(PlayerQuests activePlayerQuests, QuestContext context, ItemStack clickedItem, Villager villager) {
         final Map<AbstractQuest, Progression> playerQuests = activePlayerQuests.getQuests();
         for (Map.Entry<AbstractQuest, Progression> entry : playerQuests.entrySet()) {
             final AbstractQuest abstractQuest = entry.getKey();

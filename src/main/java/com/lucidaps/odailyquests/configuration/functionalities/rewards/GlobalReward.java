@@ -3,6 +3,7 @@ package com.lucidaps.odailyquests.configuration.functionalities.rewards;
 import com.lucidaps.odailyquests.configuration.ConfigFactory;
 import com.lucidaps.odailyquests.configuration.IConfigurable;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.files.implementations.ConfigurationFile;
 import com.lucidaps.odailyquests.rewards.Reward;
 import com.lucidaps.odailyquests.rewards.RewardLoader;
@@ -25,38 +26,28 @@ public class GlobalReward implements IConfigurable {
         this.configurationFile = configurationFile;
     }
 
-    private boolean isEnabled;
-    private Reward reward;
+    private final java.util.EnumMap<QuestPeriod, Reward> rewards = new java.util.EnumMap<>(QuestPeriod.class);
 
     @Override
     public void load() {
-        final ConfigurationSection globalRewardSection = configurationFile.getConfig().getConfigurationSection("global_reward");
-        if (globalRewardSection == null || !globalRewardSection.contains("enabled")) {
-            PluginLogger.error("Global reward section is missing or incomplete in the configuration file. Disabling.");
-            isEnabled = false;
-            return;
-        }
-
-        isEnabled = globalRewardSection.getBoolean("enabled");
-
-        if (isEnabled) {
-            final RewardType rewardType = RewardType.valueOf(globalRewardSection.getString(".reward_type"));
-            final String message = TextFormatter.format(globalRewardSection.getString(".message"));
-
-            if (rewardType == RewardType.COMMAND) {
-                reward = new Reward(rewardType, globalRewardSection.getStringList(".commands"), message);
-            } else {
-                reward = new Reward(rewardType, globalRewardSection.getInt(".amount"), message);
+        rewards.clear();
+        for (QuestPeriod period : QuestPeriod.values()) {
+            ConfigurationSection section = configurationFile.getConfig().getConfigurationSection(
+                    "quest_periods." + period.getConfigKey() + ".global_reward"
+            );
+            if (section == null && period == QuestPeriod.DAILY) {
+                section = configurationFile.getConfig().getConfigurationSection("global_reward");
             }
+            if (section == null || !section.getBoolean("enabled", false)) continue;
 
-            reward = rewardLoader.getRewardFromSection(globalRewardSection, "config.yml", null);
-
-            PluginLogger.fine("Global reward successfully loaded.");
-        } else PluginLogger.fine("Global reward is disabled.");
+            rewards.put(period, rewardLoader.getRewardFromSection(section, "config.yml", null));
+            PluginLogger.fine(period.getDisplayName() + " all-completed reward successfully loaded.");
+        }
     }
 
-    public void sendGlobalRewardInternal(String playerName) {
-        if (isEnabled) {
+    public void sendGlobalRewardInternal(String playerName, QuestPeriod period) {
+        final Reward reward = rewards.get(period);
+        if (reward != null) {
             final Player player = Bukkit.getPlayer(playerName);
             if (player == null) {
                 PluginLogger.warn("Impossible to send global reward to " + playerName + " because he is offline.");
@@ -64,7 +55,7 @@ public class GlobalReward implements IConfigurable {
             }
 
             final String msg = QuestsMessages.ALL_QUESTS_ACHIEVED.getMessage(playerName);
-            if (msg != null) player.sendMessage(msg);
+            if (msg != null) player.sendMessage(msg.replace("%period%", period.getDisplayName()));
 
             RewardManager.sendReward(Bukkit.getPlayer(playerName), reward, Collections.emptyMap());
         }
@@ -75,6 +66,10 @@ public class GlobalReward implements IConfigurable {
     }
 
     public static void sendGlobalReward(String playerName) {
-        getInstance().sendGlobalRewardInternal(playerName);
+        sendGlobalReward(playerName, QuestPeriod.DAILY);
+    }
+
+    public static void sendGlobalReward(String playerName, QuestPeriod period) {
+        getInstance().sendGlobalRewardInternal(playerName, period);
     }
 }

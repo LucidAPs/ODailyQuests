@@ -1,7 +1,8 @@
 package com.lucidaps.odailyquests.commands.player.handlers;
 
 import com.lucidaps.odailyquests.commands.player.PlayerCommandBase;
-import com.lucidaps.odailyquests.configuration.essentials.RerollMaximum;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
@@ -28,20 +29,27 @@ public class PRerollCommand extends PlayerCommandBase {
 
     @Override
     public void execute(Player player, String[] args) {
-        if (args.length != 2) {
+        if (args.length < 2 || args.length > 3) {
             help(player);
             return;
         }
 
         int index;
         try {
-            index = Integer.parseInt(args[1]);
+            index = Integer.parseInt(args[args.length - 1]);
         } catch (NumberFormatException e) {
             help(player);
             return;
         }
 
-        reroll(player, index);
+        final QuestPeriod period = args.length == 3
+                ? QuestPeriod.fromString(args[1]).orElse(null)
+                : QuestPeriods.getDefaultPeriod();
+        if (period == null || !QuestPeriods.isEnabled(period)) {
+            help(player);
+            return;
+        }
+        reroll(player, period, index);
     }
 
     /**
@@ -49,8 +57,8 @@ public class PRerollCommand extends PlayerCommandBase {
      * @param player the player who wants to reroll the quest
      * @param index the index of the quest to reroll
      */
-    private void reroll(Player player, int index) {
-        final PlayerQuests playerQuests = getLoadedPlayerQuests(player);
+    private void reroll(Player player, QuestPeriod period, int index) {
+        final PlayerQuests playerQuests = getLoadedPlayerQuests(player, period);
         if (playerQuests == null) return;
 
         if (index < 1 || index > playerQuests.getQuests().size()) {
@@ -61,7 +69,7 @@ public class PRerollCommand extends PlayerCommandBase {
         int count = playerQuests.getRecentlyRolled();
         boolean canBypass = player.hasPermission(QuestsPermissions.QUESTS_PLAYER_BYPASS_REROLL_LIMIT.get());
         if (playerQuests.rerollQuest(index - 1, player, canBypass)) {
-            rerollConfirm(index, RerollMaximum.getMaxRerolls()-(count+1), player);
+            rerollConfirm(index, QuestPeriods.get(period).rerollMaximum()-(count+1), player);
         }
     }
 
@@ -86,8 +94,12 @@ public class PRerollCommand extends PlayerCommandBase {
 
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, String[] args) {
-        if (args.length == 2 && sender instanceof Player player) {
-            final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(player.getName());
+        if (args.length == 2 && sender instanceof Player) {
+            return QuestPeriods.getEnabledPeriods().stream().map(QuestPeriod::getConfigKey).toList();
+        }
+        if (args.length == 3 && sender instanceof Player player) {
+            final QuestPeriod period = QuestPeriod.fromString(args[1]).orElse(QuestPeriod.DAILY);
+            final PlayerQuests playerQuests = QuestsManager.getPlayerQuests(player.getName(), period);
             if (playerQuests == null) {
                 return Collections.emptyList();
             }

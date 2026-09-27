@@ -2,8 +2,9 @@ package com.lucidaps.odailyquests.quests.categories;
 
 import com.lucidaps.odailyquests.ODailyQuests;
 import com.lucidaps.odailyquests.configuration.essentials.QuestAmountSetting;
-import com.lucidaps.odailyquests.configuration.essentials.QuestsPerCategory;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.configuration.essentials.SafetyMode;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.files.implementations.QuestsFiles;
 import com.lucidaps.odailyquests.quests.QuestTypeRegistry;
 import com.lucidaps.odailyquests.quests.QuestsLoader;
@@ -17,7 +18,7 @@ import java.util.Map;
 
 public class CategoriesLoader {
 
-    private static final Map<String, Category> categories = new LinkedHashMap<>();
+    private static final Map<QuestPeriod, Map<String, Category>> categories = new java.util.EnumMap<>(QuestPeriod.class);
 
     private final QuestsLoader questsLoader;
 
@@ -33,22 +34,31 @@ public class CategoriesLoader {
 
         final boolean safetyMode = SafetyMode.isSafetyModeEnabled();
 
-        for (Map.Entry<String, QuestAmountSetting> entry : QuestsPerCategory.getAllSettings().entrySet()) {
+        for (QuestPeriod period : QuestPeriods.getEnabledPeriods()) {
+            categories.put(period, new LinkedHashMap<>());
+            loadPeriod(period, safetyMode);
+            if (!ODailyQuests.INSTANCE.isEnabled()) return;
+        }
+    }
+
+    private void loadPeriod(QuestPeriod period, boolean safetyMode) {
+        final Map<String, Category> periodCategories = categories.get(period);
+        for (Map.Entry<String, QuestAmountSetting> entry : QuestPeriods.getQuestAmounts(period).entrySet()) {
             final String categoryName = entry.getKey();
             final QuestAmountSetting setting = entry.getValue();
             final Integer requiredAmount = setting.getStaticAmount();
 
-            final Category category = new Category(categoryName);
-            categories.put(categoryName, category);
+            final Category category = new Category(categoryName, period);
+            periodCategories.put(categoryName, category);
 
-            final FileConfiguration configFile = QuestsFiles.getQuestsConfigurationByCategory(categoryName);
+            final FileConfiguration configFile = QuestsFiles.getQuestsConfigurationByCategory(period, categoryName);
             if (configFile == null) {
                 PluginLogger.error("Failed to load configuration file for " + categoryName + ". Plugin will be disabled.");
                 Bukkit.getPluginManager().disablePlugin(ODailyQuests.INSTANCE);
                 return;
             }
 
-            questsLoader.loadQuests(configFile, category, categoryName);
+            questsLoader.loadQuests(configFile, category, categoryName, period);
             if (!validateCategory(category, requiredAmount, categoryName, safetyMode, setting.isDynamic())) {
                 Bukkit.getPluginManager().disablePlugin(ODailyQuests.INSTANCE);
                 return;
@@ -112,7 +122,11 @@ public class CategoriesLoader {
      * @return category.
      */
     public static Category getCategoryByName(String name) {
-        return categories.get(name);
+        return getCategoryByName(QuestPeriod.DAILY, name);
+    }
+
+    public static Category getCategoryByName(QuestPeriod period, String name) {
+        return categories.getOrDefault(period, Map.of()).get(name);
     }
 
     /**
@@ -121,10 +135,18 @@ public class CategoriesLoader {
      * @return all categories.
      */
     public static Map<String, Category> getAllCategories() {
-        return categories;
+        return getAllCategories(QuestPeriod.DAILY);
+    }
+
+    public static Map<String, Category> getAllCategories(QuestPeriod period) {
+        return categories.getOrDefault(period, Map.of());
     }
 
     public static boolean hasCategory(String categoryName) {
-        return categories.containsKey(categoryName);
+        return hasCategory(QuestPeriod.DAILY, categoryName);
+    }
+
+    public static boolean hasCategory(QuestPeriod period, String categoryName) {
+        return categories.getOrDefault(period, Map.of()).containsKey(categoryName);
     }
 }

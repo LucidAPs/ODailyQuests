@@ -2,6 +2,7 @@ package com.lucidaps.odailyquests.quests.types;
 
 
 import com.lucidaps.odailyquests.quests.conditions.placeholder.PlaceholderCondition;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.quests.player.progression.PlayerProgressor;
 import com.lucidaps.odailyquests.quests.player.progression.Progression;
 import com.lucidaps.odailyquests.quests.types.shared.BasicQuest;
@@ -28,6 +29,7 @@ public abstract class AbstractQuest extends PlayerProgressor {
     final String fileIndex;
     final String questName;
     final String categoryName;
+    final QuestPeriod period;
     final List<String> questDesc;
     final String questType;
     final ItemStack menuItem;
@@ -64,11 +66,12 @@ public abstract class AbstractQuest extends PlayerProgressor {
      * @param protectionBypass   whether protection bypass is enabled for the quest.
      * @param requiredPermissions the permissions required to undertake the quest.
      */
-    protected AbstractQuest(int questIndex, String fileIndex, String questName, String categoryName, List<String> questDesc, String questType, ItemStack menuItem, int menuItemAmount, ItemStack achievedItem, String requiredAmountRaw, Reward reward, List<String> requiredWorlds, final List<String> requiredRegions, boolean protectionBypass, List<String> requiredPermissions, List<PlaceholderCondition> placeholderConditions) {
+    protected AbstractQuest(int questIndex, String fileIndex, String questName, String categoryName, QuestPeriod period, List<String> questDesc, String questType, ItemStack menuItem, int menuItemAmount, ItemStack achievedItem, String requiredAmountRaw, Reward reward, List<String> requiredWorlds, final List<String> requiredRegions, boolean protectionBypass, List<String> requiredPermissions, List<PlaceholderCondition> placeholderConditions) {
         this.questIndex = questIndex;
         this.fileIndex = fileIndex;
         this.questName = questName;
         this.categoryName = categoryName;
+        this.period = period;
         this.questDesc = questDesc;
         this.questType = questType;
         this.menuItem = menuItem;
@@ -121,6 +124,7 @@ public abstract class AbstractQuest extends PlayerProgressor {
         this.fileIndex = basicQuest.getFileIndex();
         this.questName = basicQuest.getQuestName();
         this.categoryName = basicQuest.getCategoryName();
+        this.period = basicQuest.getPeriod();
         this.questDesc = basicQuest.getQuestDesc();
         this.questType = basicQuest.getQuestType();
         this.menuItem = basicQuest.getMenuItem();
@@ -223,6 +227,10 @@ public abstract class AbstractQuest extends PlayerProgressor {
      */
     public String getCategoryName() {
         return this.categoryName;
+    }
+
+    public QuestPeriod getPeriod() {
+        return this.period;
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.lucidaps.odailyquests.quests;
 
 import com.lucidaps.odailyquests.quests.conditions.ConditionOperator;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.quests.conditions.placeholder.PlaceholderCondition;
 import com.lucidaps.odailyquests.quests.getters.QuestItemGetter;
 import com.lucidaps.odailyquests.quests.types.AbstractQuest;
@@ -100,7 +101,7 @@ public class QuestsLoader extends QuestItemGetter {
      * @param fileIndex    the quest identifier inside the YAML file
      * @return a {@link BasicQuest}, or {@code null} if configuration is invalid
      */
-    private BasicQuest createBasicQuest(ConfigurationSection questSection, String fileName, int questIndex, String fileIndex) {
+    private BasicQuest createBasicQuest(ConfigurationSection questSection, String fileName, int questIndex, String fileIndex, QuestPeriod period) {
         /* quest name */
         final String questName = TextFormatter.format(questSection.getString(".name"));
 
@@ -157,7 +158,7 @@ public class QuestsLoader extends QuestItemGetter {
         /* reward */
         final Reward reward = createReward(questSection, fileName, fileIndex);
 
-        return new BasicQuest(questIndex, fileIndex, questName, fileName, questDesc, questType, menuItem, menuItemAmount, achievedItem, requiredAmount, reward, requiredWorlds, requiredRegions, protectionBypass, requiredPermissions, placeholderConditions);
+        return new BasicQuest(questIndex, fileIndex, questName, fileName, period, questDesc, questType, menuItem, menuItemAmount, achievedItem, requiredAmount, reward, requiredWorlds, requiredRegions, protectionBypass, requiredPermissions, placeholderConditions);
     }
 
     /**
@@ -294,7 +295,7 @@ public class QuestsLoader extends QuestItemGetter {
      * @param quests   the list to populate with loaded quests
      * @param fileName the file name used for logging
      */
-    public void loadQuests(FileConfiguration file, List<AbstractQuest> quests, String fileName) {
+    public void loadQuests(FileConfiguration file, List<AbstractQuest> quests, String fileName, QuestPeriod period) {
         final ConfigurationSection allQuestsSection = file.getConfigurationSection("quests");
         if (allQuestsSection == null) {
             PluginLogger.error("Impossible to load " + fileName + ": there is no quests in " + fileName + " file!");
@@ -309,7 +310,7 @@ public class QuestsLoader extends QuestItemGetter {
                 continue;
             }
 
-            final BasicQuest base = createBasicQuest(questSection, fileName, questIndex, fileQuest);
+            final BasicQuest base = createBasicQuest(questSection, fileName, questIndex, fileQuest, period);
             if (base == null) {
                 continue;
             }

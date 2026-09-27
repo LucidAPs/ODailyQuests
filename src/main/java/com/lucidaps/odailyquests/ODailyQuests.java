@@ -25,6 +25,8 @@ import com.lucidaps.odailyquests.commands.player.PlayerCompleter;
 import com.lucidaps.odailyquests.commands.interfaces.InterfacesManager;
 import com.lucidaps.odailyquests.commands.interfaces.InventoryClickListener;
 import com.lucidaps.odailyquests.configuration.essentials.TimestampMode;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.events.EventsManager;
 import com.lucidaps.odailyquests.files.*;
 import com.lucidaps.odailyquests.quests.types.custom.vote.VotifierPlusQuest;
@@ -64,6 +66,7 @@ public final class ODailyQuests extends JavaPlugin {
     private InterfacesManager interfacesManager;
     private FilesManager filesManager;
     public TimerTask timerTask;
+    private final java.util.EnumMap<QuestPeriod, TimerTask> timerTasks = new java.util.EnumMap<>(QuestPeriod.class);
     private ReloadService reloadService;
     private CategoriesLoader categoriesLoader;
     private DatabaseManager databaseManager;
@@ -154,13 +157,7 @@ public final class ODailyQuests extends JavaPlugin {
         }
 
         /* Init delayed task to draw new quests */
-        if (TimestampMode.getTimestampMode() == 1) {
-            if (timerTask != null) {
-                timerTask.stop();
-            }
-
-            timerTask = new TimerTask(LocalDateTime.now());
-        }
+        reloadPeriodTimers();
 
         PluginLogger.info("Plugin is started!");
     }
@@ -241,6 +238,8 @@ public final class ODailyQuests extends JavaPlugin {
             timerTask.stop();
             timerTask = null;
         }
+        timerTasks.values().forEach(TimerTask::stop);
+        timerTasks.clear();
 
         /* Avoid errors on reload */
         if (reloadService != null) {
@@ -314,6 +313,18 @@ public final class ODailyQuests extends JavaPlugin {
      */
     public DatabaseManager getDatabaseManager() {
         return databaseManager;
+    }
+
+    public void reloadPeriodTimers() {
+        timerTasks.values().forEach(TimerTask::stop);
+        timerTasks.clear();
+
+        for (QuestPeriod period : QuestPeriods.getEnabledPeriods()) {
+            if (QuestPeriods.get(period).timestampMode() == 1) {
+                timerTasks.put(period, new TimerTask(period, LocalDateTime.now()));
+            }
+        }
+        timerTask = timerTasks.get(QuestPeriod.DAILY);
     }
 
 }

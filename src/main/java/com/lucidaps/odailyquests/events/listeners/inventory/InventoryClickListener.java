@@ -39,14 +39,16 @@ public class InventoryClickListener extends ClickableChecker implements Listener
         if (action == InventoryAction.NOTHING) return;
 
         final Player player = (Player) event.getWhoClicked();
-        if (!QuestsManager.getActiveQuests().containsKey(player.getName())) {
+        if (!QuestsManager.isPlayerLoaded(player.getName())) {
             return;
         }
 
         boolean isPlayerInterface = false;
 
         final Inventory top = event.getView().getTopInventory();
-        if (top.getHolder() instanceof PlayerQuestsHolder) {
+        PlayerQuestsHolder playerQuestsHolder = null;
+        if (top.getHolder() instanceof PlayerQuestsHolder holder) {
+            playerQuestsHolder = holder;
             isPlayerInterface = true;
             event.setCancelled(true);
         }
@@ -57,6 +59,7 @@ public class InventoryClickListener extends ClickableChecker implements Listener
         if (handleCustomFurnaceResult(event, action, clickedItem, player)) return;
 
         final QuestContext.Builder contextBuilder = new QuestContext.Builder(player).clickedItem(clickedItem);
+        if (playerQuestsHolder != null) contextBuilder.period(playerQuestsHolder.getPeriod());
         if (handleVillagerTrading(event, contextBuilder)) {
             return;
         }

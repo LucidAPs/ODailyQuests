@@ -2,6 +2,8 @@ package com.lucidaps.odailyquests.commands.admin;
 
 import com.lucidaps.odailyquests.commands.interfaces.playerinterface.PlayerQuestsInterface;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
 import com.lucidaps.odailyquests.quests.player.QuestsManager;
 import org.bukkit.Bukkit;
@@ -44,7 +46,11 @@ public abstract class AdminCommandBase extends AdminMessages implements AdminCom
     }
 
     protected PlayerQuests getLoadedPlayerQuests(CommandSender sender, Player target) {
-        final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(target.getName());
+        return getLoadedPlayerQuests(sender, target, QuestPeriods.getDefaultPeriod());
+    }
+
+    protected PlayerQuests getLoadedPlayerQuests(CommandSender sender, Player target, QuestPeriod period) {
+        final PlayerQuests playerQuests = QuestsManager.getPlayerQuests(target.getName(), period);
         if (playerQuests == null) {
             final String msg = QuestsMessages.PLAYER_QUESTS_NOT_LOADED.toString();
             if (msg != null) sender.sendMessage(msg);
@@ -86,6 +92,17 @@ public abstract class AdminCommandBase extends AdminMessages implements AdminCom
      * @param player the executing player who will view the target's inventory
      */
     public void openTargetInventory(PlayerQuestsInterface playerQuestsInterface, CommandSender sender, String[] args, Player player) {
+        if (args.length < 2 || args.length > 3) {
+            help(sender);
+            return;
+        }
+        final QuestPeriod period = args.length == 3
+                ? QuestPeriod.fromString(args[2]).orElse(null)
+                : QuestPeriods.getDefaultPeriod();
+        if (period == null || !QuestPeriods.isEnabled(period)) {
+            help(sender);
+            return;
+        }
         final Player target = Bukkit.getPlayerExact(args[1]);
 
         if (target == null) {
@@ -93,7 +110,7 @@ public abstract class AdminCommandBase extends AdminMessages implements AdminCom
             return;
         }
 
-        final Inventory inventory = playerQuestsInterface.getPlayerQuestsInterface(target);
+        final Inventory inventory = playerQuestsInterface.getPlayerQuestsInterface(target, period);
         if (inventory == null) {
             String msg = QuestsMessages.ERROR_INVENTORY.toString();
             if (msg != null) player.sendMessage(msg);

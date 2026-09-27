@@ -61,15 +61,24 @@ public class DatabaseManager {
     }
 
     public void saveProgressionForPlayer(String playerName, String playerUuid, PlayerQuests playerQuests) {
-        saveProgressionForPlayer(playerName, playerUuid, playerQuests, plugin.isServerStopping());
+        saveProgressionForPlayer(playerName, playerUuid, plugin.isServerStopping());
     }
 
     public void saveProgressionForPlayer(String playerName, String playerUuid, PlayerQuests playerQuests, boolean forceSync) {
+        saveProgressionForPlayer(playerName, playerUuid, forceSync);
+    }
+
+    public void saveProgressionForPlayer(String playerName, String playerUuid) {
+        saveProgressionForPlayer(playerName, playerUuid, plugin.isServerStopping());
+    }
+
+    public void saveProgressionForPlayer(String playerName, String playerUuid, boolean forceSync) {
+        final PlayerQuestData data = PlayerQuestData.capture(playerName);
         switch (Database.getMode()) {
             case YAML ->
-                    yamlManager.getSaveProgressionYAML().saveProgression(playerName, playerUuid, playerQuests, forceSync);
+                    yamlManager.getSaveProgressionYAML().saveProgression(playerName, playerUuid, data, forceSync);
             case MYSQL, SQLITE ->
-                    sqlManager.getSaveProgressionSQL().saveProgression(playerName, playerUuid, playerQuests, forceSync);
+                    sqlManager.getSaveProgressionSQL().saveProgression(playerName, playerUuid, data, forceSync);
             default ->
                     PluginLogger.error("Impossible to save player quests : the selected storage mode is incorrect !");
         }

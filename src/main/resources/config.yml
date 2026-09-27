@@ -3,7 +3,7 @@ debug: false
 
 # never touch these lines, used for the plugin auto update system
 version: 3.0.0
-database_version: 4
+database_version: 5
 
 # prefix that will be displayed before every message from messages.yml
 prefix: '&3[&bO''DailyQuests&3] '
@@ -54,6 +54,60 @@ quests_per_category:
   easy: 3  # The player will receive 3 quests from the "easy.yml" file
   medium: 3
   hard: 3
+
+# Independent quest periods. Existing top-level quest settings are used as the
+# Daily fallback on upgraded servers that do not yet have this section.
+# The global category keeps exactly the same behaviour as every other custom
+# category; each period simply loads it from a different folder.
+quest_periods:
+  daily:
+    # Quest files: plugins/ODailyQuests/quests/*.yml
+    enabled: true
+    renewal:
+      timestamp_mode: 1
+      time: "00:00"
+      time_zone: "SystemDefault"
+    quests_per_category:
+      easy: 3
+      medium: 3
+      hard: 3
+    reroll_maximum: -1
+
+  weekly:
+    # Quest files: plugins/ODailyQuests/quests/weekly/*.yml
+    enabled: false
+    renewal:
+      timestamp_mode: 1
+      day_of_week: MONDAY
+      time: "00:00"
+      time_zone: "SystemDefault"
+    quests_per_category:
+      easy: 3
+      medium: 3
+      hard: 3
+      # global: 1
+    reroll_maximum: -1
+    global_reward:
+      enabled: false
+    categories_rewards: { }
+
+  monthly:
+    # Quest files: plugins/ODailyQuests/quests/monthly/*.yml
+    enabled: false
+    renewal:
+      timestamp_mode: 1
+      day_of_month: 1
+      time: "00:00"
+      time_zone: "SystemDefault"
+    quests_per_category:
+      easy: 3
+      medium: 3
+      hard: 3
+      # global: 1
+    reroll_maximum: -1
+    global_reward:
+      enabled: false
+    categories_rewards: { }
 
 # Select the mode of timestamp.
 # ============================================================================

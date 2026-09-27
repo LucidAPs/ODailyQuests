@@ -1,7 +1,8 @@
 package com.lucidaps.odailyquests.quests.player;
 
 import com.lucidaps.odailyquests.configuration.essentials.Debugger;
-import com.lucidaps.odailyquests.configuration.essentials.RerollMaximum;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.configuration.essentials.RerollNotAchieved;
 import com.lucidaps.odailyquests.configuration.functionalities.rewards.TotalRewards;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
@@ -31,6 +32,7 @@ public class PlayerQuests {
 
     /* timestamp of last quests renew */
     private final Long timestamp;
+    private final QuestPeriod period;
 
     private int achievedQuests;
     private int totalAchievedQuests;
@@ -46,6 +48,11 @@ public class PlayerQuests {
      * @param quests    a map of quests and their respective progression.
      */
     public PlayerQuests(Long timestamp, Map<AbstractQuest, Progression> quests) {
+        this(QuestPeriod.DAILY, timestamp, quests);
+    }
+
+    public PlayerQuests(QuestPeriod period, Long timestamp, Map<AbstractQuest, Progression> quests) {
+        this.period = period;
         this.timestamp = timestamp;
         this.quests = quests;
         this.achievedQuests = 0;
@@ -80,6 +87,10 @@ public class PlayerQuests {
         return this.timestamp;
     }
 
+    public QuestPeriod getPeriod() {
+        return period;
+    }
+
     /**
      * Increases the number of achieved quests for a given category.
      * <p>
@@ -112,21 +123,25 @@ public class PlayerQuests {
 
         if (this.achievedQuestsByCategory.get(category) == countQuestsInCategory(category)) {
             Debugger.write("PlayerQuests: all category quests completion is handled.");
-            QuestCompletionHandler.handleAllCategoryQuestsCompleted(player, category);
+            QuestCompletionHandler.handleAllCategoryQuestsCompleted(player, period, category);
         }
 
         /* check if the player have completed all quests */
         if (this.achievedQuests == this.quests.size()) {
             Debugger.write("PlayerQuests: all quests completion is handled.");
-            QuestCompletionHandler.handleAllQuestsCompleted(player);
+            QuestCompletionHandler.handleAllQuestsCompleted(player, period);
         }
 
-        if (TotalRewards.isGlobalStep(this.totalAchievedQuests)) {
-            Debugger.write("PlayerQuests: global total reward is handled for " + player.getName() + " with total achieved quests: " + this.totalAchievedQuests + ".");
-            QuestCompletionHandler.handleGlobalTotalReward(player, this.totalAchievedQuests);
+        final int overallTotal = QuestsManager.incrementOverallLifetimeTotal(player.getName());
+        if (TotalRewards.isGlobalStep(overallTotal)) {
+            Debugger.write("PlayerQuests: global total reward is handled for " + player.getName() + " with overall achieved quests: " + overallTotal + ".");
+            QuestCompletionHandler.handleGlobalTotalReward(player, overallTotal);
         }
 
-        if (TotalRewards.isCategoryStep(category, this.totalAchievedQuestsByCategory.get(category))) {
+        // Legacy category lifetime rewards belonged to the original Daily pool.
+        // Keeping them Daily-only prevents identically named Weekly/Monthly
+        // categories from sharing a milestone counter.
+        if (period == QuestPeriod.DAILY && TotalRewards.isCategoryStep(category, this.totalAchievedQuestsByCategory.get(category))) {
             Debugger.write("PlayerQuests: category total reward is handled for " + player.getName() + " in category " + category + " with total achieved quests: " + this.totalAchievedQuestsByCategory.get(category) + ".");
             QuestCompletionHandler.handleCategoryTotalReward(player, category, this.totalAchievedQuestsByCategory.get(category));
         }
@@ -173,7 +188,7 @@ public class PlayerQuests {
 
         // Resolve category that must provide the replacement quest.
         final String categoryName = questToRemove.getCategoryName();
-        final Category category = CategoriesLoader.getCategoryByName(categoryName);
+        final Category category = CategoriesLoader.getCategoryByName(period, categoryName);
         if (category == null) {
             logCategoryNullError();
             return false;
@@ -231,7 +246,7 @@ public class PlayerQuests {
      * @return {@code true} if rerolling is allowed; {@code false} otherwise
      */
     private boolean isRerollAllowedMaximum(Player player) {
-        int max = RerollMaximum.getMaxRerolls();
+        int max = QuestPeriods.get(period).rerollMaximum();
         if (max > 0 && recentRerolls >= max) {
             final String msg = QuestsMessages.CANNOT_REROLL_IF_MAX.toString();
             if (msg != null) player.sendMessage(msg);

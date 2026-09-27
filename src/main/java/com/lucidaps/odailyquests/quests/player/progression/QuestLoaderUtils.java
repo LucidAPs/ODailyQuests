@@ -4,6 +4,7 @@ import com.lucidaps.odailyquests.configuration.essentials.*;
 import com.lucidaps.odailyquests.configuration.essentials.*;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.quests.categories.CategoriesLoader;
 import com.lucidaps.odailyquests.quests.categories.Category;
 import com.lucidaps.odailyquests.quests.types.AbstractQuest;
@@ -30,36 +31,11 @@ public class QuestLoaderUtils {
      * @return true if it's time to redraw quests.
      */
     public static boolean checkTimestamp(long timestamp) {
-        final int mode = TimestampMode.getTimestampMode();
-        final Duration renewInterval = RenewInterval.getRenewInterval();
+        return checkTimestamp(QuestPeriod.DAILY, timestamp);
+    }
 
-        switch (mode) {
-            case 1 -> {
-                final RenewSchedule.Settings s = RenewSchedule.settings();
-                if (!RenewSchedule.isValid(s)) {
-                    PluginLogger.error(ChatColor.RED + "Renew schedule is invalid.");
-                    return false;
-                }
-
-                final ZonedDateTime lastRenew = Instant.ofEpochMilli(timestamp).atZone(s.zone());
-                final ZonedDateTime now = ZonedDateTime.now(s.zone());
-
-                return RenewSchedule.shouldRenewSince(lastRenew, now, s);
-            }
-
-            case 2 -> {
-                if (renewInterval != null) {
-                    return System.currentTimeMillis() - timestamp >= renewInterval.toMillis();
-                } else {
-                    PluginLogger.error(ChatColor.RED + "Impossible to check player quests timestamp. Renew interval is incorrect.");
-                }
-            }
-
-            default ->
-                    PluginLogger.error(ChatColor.RED + "Impossible to load player quests timestamp. The selected mode is incorrect.");
-        }
-
-        return false;
+    public static boolean checkTimestamp(QuestPeriod period, long timestamp) {
+        return QuestPeriods.shouldRenew(period, timestamp);
     }
 
     /**
@@ -69,8 +45,16 @@ public class QuestLoaderUtils {
      * @param activeQuests all active quests.
      */
     public static void loadNewPlayerQuests(String playerName, Map<String, PlayerQuests> activeQuests, Map<String, Integer> totalAchievedQuestsByCategory, int totalAchievedQuests) {
+        loadNewPlayerQuests(playerName, QuestPeriod.DAILY, totalAchievedQuestsByCategory, totalAchievedQuests);
+    }
+
+    public static void loadNewPlayerQuests(String playerName, QuestPeriod period, Map<String, Integer> totalAchievedQuestsByCategory, int totalAchievedQuests) {
+        loadNewPlayerQuests(playerName, period, totalAchievedQuestsByCategory, totalAchievedQuests, true);
+    }
+
+    public static void loadNewPlayerQuests(String playerName, QuestPeriod period, Map<String, Integer> totalAchievedQuestsByCategory, int totalAchievedQuests, boolean notifyPlayer) {
         Debugger.write("Entering loadNewPlayerQuests method for player " + playerName + ".");
-        activeQuests.remove(playerName);
+        QuestsManager.getActiveQuests(period).remove(playerName);
 
         final Player player = Bukkit.getPlayer(playerName);
         Debugger.write("Attempting to renew quests for player " + playerName + ".");
@@ -80,25 +64,19 @@ public class QuestLoaderUtils {
             return;
         }
 
-        final Map<AbstractQuest, Progression> quests = QuestsManager.selectRandomQuests(player);
-        final PlayerQuests playerQuests;
-
-        if (TimestampMode.getTimestampMode() == 1) {
-            playerQuests = new PlayerQuests(Calendar.getInstance().getTimeInMillis(), quests);
-        } else {
-            playerQuests = new PlayerQuests(System.currentTimeMillis(), quests);
-        }
+        final Map<AbstractQuest, Progression> quests = QuestsManager.selectRandomQuests(player, period);
+        final PlayerQuests playerQuests = new PlayerQuests(period, System.currentTimeMillis(), quests);
 
         playerQuests.setTotalAchievedQuests(totalAchievedQuests);
         playerQuests.setTotalAchievedQuestsByCategory(totalAchievedQuestsByCategory);
         playerQuests.setRecentRerolls(0);
 
         final String msg = QuestsMessages.QUESTS_RENEWED.getMessage(player);
-        if (msg != null && player.hasPermission(QuestsPermissions.QUESTS_PROGRESS.get())) {
-            player.sendMessage(msg);
+        if (notifyPlayer && msg != null && player.hasPermission(QuestsPermissions.QUESTS_PROGRESS.get())) {
+            player.sendMessage(msg.replace("%period%", period.getDisplayName()));
         }
 
-        activeQuests.put(playerName, playerQuests);
+        QuestsManager.registerPlayerPeriod(playerName, period, playerQuests);
         if (Logs.isEnabled()) {
             PluginLogger.info(playerName + "'s quests have been renewed.");
         }
@@ -114,12 +92,16 @@ public class QuestLoaderUtils {
      * @return true if it's time to renew quests.
      */
     public static boolean isTimeToRenew(Player player, Map<String, PlayerQuests> activeQuests) {
-        if (TimestampMode.getTimestampMode() == 1) return false;
-        final PlayerQuests playerQuests = activeQuests.get(player.getName());
+        return isTimeToRenew(player, QuestPeriod.DAILY);
+    }
+
+    public static boolean isTimeToRenew(Player player, QuestPeriod period) {
+        if (QuestPeriods.get(period).timestampMode() == 1) return false;
+        final PlayerQuests playerQuests = QuestsManager.getPlayerQuests(player.getName(), period);
         if (playerQuests == null) return false;
 
-        if (checkTimestamp(playerQuests.getTimestamp())) {
-            loadNewPlayerQuests(player.getName(), activeQuests, playerQuests.getTotalAchievedQuestsByCategory(), playerQuests.getTotalAchievedQuests());
+        if (checkTimestamp(period, playerQuests.getTimestamp())) {
+            loadNewPlayerQuests(player.getName(), period, playerQuests.getTotalAchievedQuestsByCategory(), playerQuests.getTotalAchievedQuests());
             return true;
         }
 
@@ -135,15 +117,22 @@ public class QuestLoaderUtils {
      * @return quest of index.
      */
     public static AbstractQuest findQuest(String playerName, int questIndex, int id) {
+        return findQuest(QuestPeriod.DAILY, playerName, questIndex, id);
+    }
+
+    public static AbstractQuest findQuest(QuestPeriod period, String playerName, int questIndex, int id) {
         AbstractQuest quest = null;
 
-        final Map<String, Category> categoryMap = CategoriesLoader.getAllCategories();
+        final Map<String, Category> categoryMap = CategoriesLoader.getAllCategories(period);
         int totalQuestsCount = 0;
 
         for (Map.Entry<String, Category> entry : categoryMap.entrySet()) {
             String categoryName = entry.getKey();
             Category category = entry.getValue();
-            int categoryQuestsAmount = QuestsPerCategory.getAmountForCategory(categoryName);
+            final QuestAmountSetting amountSetting = QuestPeriods.getQuestAmounts(period).get(categoryName);
+            int categoryQuestsAmount = amountSetting == null || amountSetting.getStaticAmount() == null
+                    ? category.size()
+                    : amountSetting.getStaticAmount();
 
             if (id <= totalQuestsCount + categoryQuestsAmount) {
                 quest = getQuestAtIndex(category, questIndex, playerName);
@@ -162,8 +151,12 @@ public class QuestLoaderUtils {
     }
 
     public static AbstractQuest findQuest(String playerName, String categoryName, int questIndex, int id) {
+        return findQuest(QuestPeriod.DAILY, playerName, categoryName, questIndex, id);
+    }
+
+    public static AbstractQuest findQuest(QuestPeriod period, String playerName, String categoryName, int questIndex, int id) {
         if (categoryName != null && !categoryName.isEmpty()) {
-            final Category category = CategoriesLoader.getCategoryByName(categoryName);
+            final Category category = CategoriesLoader.getCategoryByName(period, categoryName);
             if (category == null) {
                 PluginLogger.warn("Category '" + categoryName + "' referenced in player " + playerName + " data no longer exists. New quests will be drawn for the player.");
                 return null;
@@ -171,7 +164,7 @@ public class QuestLoaderUtils {
             return getQuestAtIndex(category, questIndex, playerName);
         }
 
-        return findQuest(playerName, questIndex, id);
+        return findQuest(period, playerName, questIndex, id);
     }
 
     /**

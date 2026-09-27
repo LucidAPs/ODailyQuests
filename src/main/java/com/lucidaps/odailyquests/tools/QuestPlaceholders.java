@@ -59,7 +59,20 @@ public final class QuestPlaceholders {
         }
 
         if (player != null) {
-            result = result.replace(DRAW_IN, TimeRemain.timeRemain(player.getName()));
+            result = result.replace(DRAW_IN, playerQuests != null
+                    ? TimeRemain.timeRemain(player.getName(), playerQuests.getPeriod())
+                    : quest != null
+                    ? TimeRemain.timeRemain(player.getName(), quest.getPeriod())
+                    : TimeRemain.timeRemain(player.getName()));
+        }
+
+        if (playerQuests != null) {
+            result = result.replace("%period%", playerQuests.getPeriod().getDisplayName())
+                    .replace("%period_key%", playerQuests.getPeriod().getConfigKey())
+                    .replace("%quest_count%", String.valueOf(playerQuests.getQuests().size()));
+        } else if (quest != null) {
+            result = result.replace("%period%", quest.getPeriod().getDisplayName())
+                    .replace("%period_key%", quest.getPeriod().getConfigKey());
         }
 
         if (status != null) {

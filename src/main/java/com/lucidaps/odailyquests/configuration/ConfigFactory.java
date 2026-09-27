@@ -48,6 +48,7 @@ public class ConfigFactory {
         configs.put(TimestampMode.class, new TimestampMode(configurationFile));
         configs.put(SafetyMode.class, new SafetyMode(configurationFile));
         configs.put(QuestsPerCategory.class, new QuestsPerCategory(configurationFile));
+        configs.put(QuestPeriods.class, new QuestPeriods(configurationFile));
         configs.put(RerollNotAchieved.class, new RerollNotAchieved(configurationFile));
         configs.put(RerollMaximum.class, new RerollMaximum(configurationFile));
         configs.put(Synchronization.class, new Synchronization(configurationFile));
@@ -86,9 +87,7 @@ public class ConfigFactory {
         configs.values().forEach(IConfigurable::load);
 
         // reload the timer task
-        if (ODailyQuests.INSTANCE.timerTask != null) {
-            ODailyQuests.INSTANCE.timerTask.reload();
-        }
+        ODailyQuests.INSTANCE.reloadPeriodTimers();
     }
 
     public static <T extends IConfigurable> T getConfig(Class<T> clazz) {

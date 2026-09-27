@@ -2,6 +2,8 @@ package com.lucidaps.odailyquests.commands.player.handlers;
 
 import com.lucidaps.odailyquests.commands.player.PlayerCommandBase;
 import com.lucidaps.odailyquests.commands.interfaces.playerinterface.PlayerQuestsInterface;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
 import org.bukkit.entity.Player;
@@ -27,12 +29,23 @@ public class MeCommand extends PlayerCommandBase {
 
     @Override
     public void execute(Player player, String[] args) {
-        if (args.length > 1) {
+        if (args.length > 2) {
             help(player);
             return;
         }
 
-        openInventory(player);
+        final QuestPeriod period;
+        if (args.length == 2) {
+            period = QuestPeriod.fromString(args[1]).orElse(null);
+            if (period == null || !QuestPeriods.isEnabled(period)) {
+                help(player);
+                return;
+            }
+        } else {
+            period = QuestPeriods.getDefaultPeriod();
+        }
+
+        openInventory(player, period);
     }
 
     /**
@@ -40,8 +53,8 @@ public class MeCommand extends PlayerCommandBase {
      *
      * @param player the player.
      */
-    private void openInventory(Player player) {
-        final Inventory inventory = playerQuestsInterface.getPlayerQuestsInterface(player);
+    private void openInventory(Player player, QuestPeriod period) {
+        final Inventory inventory = playerQuestsInterface.getPlayerQuestsInterface(player, period);
         if (inventory == null) {
             String msg = QuestsMessages.IMPOSSIBLE_TO_OPEN_INVENTORY.toString();
             if (msg != null) player.sendMessage(msg);
@@ -53,5 +66,11 @@ public class MeCommand extends PlayerCommandBase {
         }
 
         player.openInventory(inventory);
+    }
+
+    @Override
+    public java.util.List<String> onTabComplete(org.bukkit.command.CommandSender sender, String[] args) {
+        if (args.length != 2) return java.util.Collections.emptyList();
+        return QuestPeriods.getEnabledPeriods().stream().map(QuestPeriod::getConfigKey).toList();
     }
 }

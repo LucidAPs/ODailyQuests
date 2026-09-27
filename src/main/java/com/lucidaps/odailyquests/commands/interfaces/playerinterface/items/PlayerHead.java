@@ -1,6 +1,7 @@
 package com.lucidaps.odailyquests.commands.interfaces.playerinterface.items;
 
 import com.lucidaps.odailyquests.quests.player.QuestsManager;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 
 import com.lucidaps.odailyquests.commands.interfaces.playerinterface.items.getters.InterfaceItemGetter;
 import com.lucidaps.odailyquests.files.implementations.PlayerInterfaceFile;
@@ -89,11 +90,15 @@ public class PlayerHead extends InterfaceItemGetter {
     }
 
     public Inventory setPlayerHead(Inventory inventory, Player player, int size) {
+        return setPlayerHead(inventory, player, QuestsManager.getPlayerQuests(player.getName(), QuestPeriods.getDefaultPeriod()), size);
+    }
+
+    public Inventory setPlayerHead(Inventory inventory, Player player, PlayerQuests playerQuests, int size) {
         if (!enabled) return inventory;
 
         for (int slot : slots) {
             if (slot >= 0 && slot <= size) {
-                inventory.setItem(slot, getPlayerHead(player));
+                inventory.setItem(slot, getPlayerHead(player, playerQuests));
             } else {
                 PluginLogger.error("An error occurred when loading the player interface.");
                 PluginLogger.error("The slot defined for the player head is out of bounds.");
@@ -104,6 +109,10 @@ public class PlayerHead extends InterfaceItemGetter {
     }
 
     public ItemStack getPlayerHead(Player player) {
+        return getPlayerHead(player, QuestsManager.getPlayerQuests(player.getName(), QuestPeriods.getDefaultPeriod()));
+    }
+
+    public ItemStack getPlayerHead(Player player, PlayerQuests playerQuests) {
         final SkullMeta clone = this.meta.clone();
         clone.setDisplayName(TextFormatter.format(player, clone.getDisplayName()
                 .replace("%player_name%", player.getName())));
@@ -116,7 +125,6 @@ public class PlayerHead extends InterfaceItemGetter {
             int index = lore.indexOf(string);
             string = TextFormatter.format(player, string);
 
-            final PlayerQuests playerQuests = QuestsManager.getActiveQuests().get(player.getName());
             lore.set(index, QuestPlaceholders.replaceQuestPlaceholders(TextFormatter.format(string), player, null, null, playerQuests, null));
         }
 

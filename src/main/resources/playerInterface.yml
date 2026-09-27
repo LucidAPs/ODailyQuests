@@ -7,7 +7,7 @@
 # ======================================================
 player_interface:
   size: 45
-  inventory_name: "#0057ff &l        Daily Quests"
+  inventory_name: "#0057ff &l        %period% Quests"
   # disable the status of the quest if you want to handle it manually by placeholders
   disable_status: false
   # the 3 following lines will not be used if disable_status is set to true
@@ -25,7 +25,7 @@ player_interface:
     item_name: '&b%player_name%'
     item_description:
       - '&3Status: '
-      - ' &3&l| &7Completed quests: &b%achieved%&3/&b9'
+      - ' &3&l| &7Completed quests: &b%achieved%&3/&b%quest_count%'
       - ' &3&l| &7Total completed quests: &b%odailyquests_total%'
       - ' &3&l| &7New quests in: &b%drawIn%'
 
@@ -76,10 +76,10 @@ player_interface:
       type: PLAYER_COMMAND
       item:
         material: CUSTOM_HEAD
-        name: '&b&lInformations'
+        name: '&b&l%period% Quests'
         texture: cdcdee6d06df234b8e603328b96c57f3a312e79aabfc3be72a8b421878ed68cf
         lore:
-          - ' &3&l| &7Everyday you get a new'
+          - ' &3&l| &7Each period you get a new'
           - ' &3&l| &7set of quests.'
           - ''
           - ' &3&l| &7Completing quests will'
@@ -93,14 +93,14 @@ player_interface:
       type: PLAYER_COMMAND
       item:
         material: CUSTOM_HEAD
-        name: "&b&lDaily reroll"
+        name: "&b&l%period% reroll"
         texture: bc8def67a12622ead1decd3d89364257b531896d87e469813131ca235b5c7
         lore:
-          - ' &3&l| &7Everyday you can change'
+          - ' &3&l| &7During each period you can change'
           - ' &3&l| &7one of your quests for'
           - ' &3&l| &7a different one'
           - ''
-          - ' &8(&7!&8) &7/dq reroll <position>'
+          - ' &8(&7!&8) &7/dq reroll %period_key% <position>'
         slot: 9
     3:
       type: FILL
@@ -120,9 +120,6 @@ player_interface:
           - 28
           - 36
           - 38
-          - 39
-          - 40
-          - 41
           - 42
           - 43
           - 44
@@ -138,3 +135,36 @@ player_interface:
           - 26
           - 29
           - 35
+    5:
+      type: PLAYER_COMMAND
+      period: daily
+      commands:
+        - "dq me daily"
+      item:
+        material: CLOCK
+        name: "&bDaily Quests"
+        lore:
+          - "&7Open your Daily quest period."
+        slot: 39
+    6:
+      type: PLAYER_COMMAND
+      period: weekly
+      commands:
+        - "dq me weekly"
+      item:
+        material: BOOK
+        name: "&aWeekly Quests"
+        lore:
+          - "&7Open your Weekly quest period."
+        slot: 40
+    7:
+      type: PLAYER_COMMAND
+      period: monthly
+      commands:
+        - "dq me monthly"
+      item:
+        material: NETHER_STAR
+        name: "&dMonthly Quests"
+        lore:
+          - "&7Open your Monthly quest period."
+        slot: 41

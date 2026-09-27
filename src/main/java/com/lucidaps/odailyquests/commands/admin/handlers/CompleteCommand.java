@@ -3,6 +3,8 @@ package com.lucidaps.odailyquests.commands.admin.handlers;
 import com.lucidaps.odailyquests.commands.admin.AdminCommandBase;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.enums.QuestsPermissions;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.quests.player.QuestsManager;
 import com.lucidaps.odailyquests.quests.player.progression.Progression;
 import com.lucidaps.odailyquests.quests.player.progression.QuestCompletionHandler;
@@ -31,22 +33,28 @@ public class CompleteCommand extends AdminCommandBase {
     @Override
     public void execute(CommandSender sender, String[] args) {
 
+        if (args.length < 3 || args.length > 4) {
+            help(sender);
+            return;
+        }
         final Player target = getTargetPlayer(sender, args[1]);
         if (target == null) {
             return;
         }
 
-        if (args.length < 3) {
+        final QuestPeriod period = args.length == 4
+                ? QuestPeriod.fromString(args[2]).orElse(null)
+                : QuestPeriods.getDefaultPeriod();
+        if (period == null || !QuestPeriods.isEnabled(period)) {
             help(sender);
             return;
         }
-
-        int questIndex = parseQuestIndex(sender, args[2]);
+        int questIndex = parseQuestIndex(sender, args[args.length - 1]);
         if (questIndex == -1) {
             return;
         }
 
-        complete(sender, questIndex, target);
+        complete(sender, questIndex, target, period);
     }
 
     /**
@@ -56,8 +64,8 @@ public class CompleteCommand extends AdminCommandBase {
      * @param questIndex the index of the quest
      * @param target     the player
      */
-    private void complete(CommandSender sender, int questIndex, Player target) {
-        final var loadedQuests = getLoadedPlayerQuests(sender, target);
+    private void complete(CommandSender sender, int questIndex, Player target, QuestPeriod period) {
+        final var loadedQuests = getLoadedPlayerQuests(sender, target, period);
         if (loadedQuests == null) return;
 
         final Map<AbstractQuest, Progression> playerQuests = loadedQuests.getQuests();
@@ -91,12 +99,16 @@ public class CompleteCommand extends AdminCommandBase {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, String[] args) {
         if (args.length == 3) {
+            return QuestPeriods.getEnabledPeriods().stream().map(QuestPeriod::getConfigKey).toList();
+        }
+        if (args.length == 4) {
             final Player target = (args.length >= 2) ? org.bukkit.Bukkit.getPlayerExact(args[1]) : null;
             if (target == null) {
                 return Collections.emptyList();
             }
 
-            final var activeQuests = QuestsManager.getActiveQuests().get(target.getName());
+            final QuestPeriod period = QuestPeriod.fromString(args[2]).orElse(QuestPeriod.DAILY);
+            final var activeQuests = QuestsManager.getPlayerQuests(target.getName(), period);
             if (activeQuests == null) {
                 return Collections.emptyList();
             }
@@ -108,7 +120,7 @@ public class CompleteCommand extends AdminCommandBase {
             return questNumbers;
         }
 
-        if (args.length >= 4) {
+        if (args.length >= 5) {
             return Collections.emptyList();
         }
 

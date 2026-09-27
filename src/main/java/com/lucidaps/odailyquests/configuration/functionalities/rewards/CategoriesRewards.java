@@ -3,6 +3,7 @@ package com.lucidaps.odailyquests.configuration.functionalities.rewards;
 import com.lucidaps.odailyquests.configuration.ConfigFactory;
 import com.lucidaps.odailyquests.configuration.IConfigurable;
 import com.lucidaps.odailyquests.configuration.essentials.Debugger;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.enums.QuestsMessages;
 import com.lucidaps.odailyquests.files.implementations.ConfigurationFile;
 import com.lucidaps.odailyquests.rewards.Reward;
@@ -18,7 +19,7 @@ import java.util.Map;
 
 public class CategoriesRewards implements IConfigurable {
 
-    private final Map<String, Reward> categoryRewards = new HashMap<>();
+    private final Map<QuestPeriod, Map<String, Reward>> categoryRewards = new java.util.EnumMap<>(QuestPeriod.class);
 
     private final ConfigurationFile configurationFile;
     private final RewardLoader rewardLoader = new RewardLoader();
@@ -29,21 +30,25 @@ public class CategoriesRewards implements IConfigurable {
 
     @Override
     public void load() {
-        final ConfigurationSection categoriesRewardsConfig = configurationFile.getConfig().getConfigurationSection("categories_rewards");
-        if (categoriesRewardsConfig == null) {
-            PluginLogger.error("categories_rewards section is missing in the configuration file.");
-            return;
-        }
-
-        for (String category : categoriesRewardsConfig.getKeys(false)) {
-            final ConfigurationSection rewardSection = categoriesRewardsConfig.getConfigurationSection(category);
-            if (rewardSection == null) {
-                PluginLogger.error("Reward section for category " + category + " is missing in the configuration file.");
-                continue;
+        categoryRewards.clear();
+        for (QuestPeriod period : QuestPeriod.values()) {
+            ConfigurationSection section = configurationFile.getConfig().getConfigurationSection(
+                    "quest_periods." + period.getConfigKey() + ".categories_rewards"
+            );
+            if (section == null && period == QuestPeriod.DAILY) {
+                section = configurationFile.getConfig().getConfigurationSection("categories_rewards");
             }
 
-            final Reward reward = rewardLoader.getRewardFromSection(rewardSection, "config.yml", null);
-            categoryRewards.put(category, reward);
+            final Map<String, Reward> periodRewards = new HashMap<>();
+            if (section != null) {
+                for (String category : section.getKeys(false)) {
+                    final ConfigurationSection rewardSection = section.getConfigurationSection(category);
+                    if (rewardSection != null) {
+                        periodRewards.put(category, rewardLoader.getRewardFromSection(rewardSection, "config.yml", null));
+                    }
+                }
+            }
+            categoryRewards.put(period, periodRewards);
         }
     }
 
@@ -53,17 +58,18 @@ public class CategoriesRewards implements IConfigurable {
      * @param player   player.
      * @param category category.
      */
-    public void sendCategoryRewardInternal(Player player, String category) {
-        if (!categoryRewards.containsKey(category)) {
+    public void sendCategoryRewardInternal(Player player, QuestPeriod period, String category) {
+        final Map<String, Reward> periodRewards = categoryRewards.getOrDefault(period, Map.of());
+        if (!periodRewards.containsKey(category)) {
             Debugger.write("Category " + category + " is missing in the categories_rewards section.");
             return;
         }
 
-        final Reward reward = categoryRewards.get(category);
+        final Reward reward = periodRewards.get(category);
         if (reward != null) {
             final String msg = QuestsMessages.CATEGORY_QUESTS_ACHIEVED.toString();
             if (msg != null) {
-                player.sendMessage(msg.replace("%category%", category));
+                player.sendMessage(msg.replace("%category%", category).replace("%period%", period.getDisplayName()));
             }
 
             RewardManager.sendReward(player, reward, Collections.emptyMap());
@@ -77,6 +83,10 @@ public class CategoriesRewards implements IConfigurable {
     }
 
     public static void sendCategoryReward(Player player, String category) {
-        getInstance().sendCategoryRewardInternal(player, category);
+        sendCategoryReward(player, QuestPeriod.DAILY, category);
+    }
+
+    public static void sendCategoryReward(Player player, QuestPeriod period, String category) {
+        getInstance().sendCategoryRewardInternal(player, period, category);
     }
 }

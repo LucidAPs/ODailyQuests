@@ -27,11 +27,12 @@ public class QuestsPerCategory implements IConfigurable {
         final FileConfiguration config = configurationFile.getConfig();
         questsAmounts.clear();
 
-        final ConfigurationSection section = config.getConfigurationSection("quests_per_category");
+        ConfigurationSection section = config.getConfigurationSection("quests_per_category");
         if (section == null) {
-            PluginLogger.error("No quests_per_category section found! Please check your configuration file.");
-            PluginLogger.error("Impossible to load quests. Disabling plugin.");
-            Bukkit.getPluginManager().disablePlugin(ODailyQuests.INSTANCE);
+            section = config.getConfigurationSection("quest_periods.daily.quests_per_category");
+        }
+        if (section == null) {
+            PluginLogger.warn("No legacy/Daily quests_per_category section found; legacy category APIs will be empty.");
             return;
         }
 

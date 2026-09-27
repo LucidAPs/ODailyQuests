@@ -41,6 +41,45 @@ public enum SQLQuery {
                 );
             """),
 
+    MYSQL_CREATE_PERIOD_STATE_TABLE("""
+                CREATE TABLE IF NOT EXISTS `odq_period_state` (
+                    `player_uuid` CHAR(36) NOT NULL,
+                    `period` VARCHAR(16) NOT NULL,
+                    `player_timestamp` BIGINT NOT NULL,
+                    `achieved_quests` INT NOT NULL,
+                    `total_achieved_quests` INT NOT NULL,
+                    `recent_rerolls` INT NOT NULL DEFAULT 0,
+                    PRIMARY KEY (`player_uuid`, `period`)
+                );
+            """),
+
+    MYSQL_CREATE_PERIOD_PROGRESSION_TABLE("""
+                CREATE TABLE IF NOT EXISTS `odq_period_progression` (
+                    `primary_key` INT AUTO_INCREMENT PRIMARY KEY,
+                    `player_uuid` CHAR(36) NOT NULL,
+                    `period` VARCHAR(16) NOT NULL,
+                    `player_quest_id` SMALLINT NOT NULL,
+                    `quest_index` INT NOT NULL,
+                    `category` VARCHAR(50) NOT NULL,
+                    `advancement` INT NOT NULL,
+                    `required_amount` INT NOT NULL,
+                    `reward_amount` DOUBLE DEFAULT NULL,
+                    `is_achieved` BIT NOT NULL,
+                    `selected_required` INT DEFAULT NULL,
+                    UNIQUE (`player_uuid`, `period`, `player_quest_id`)
+                );
+            """),
+
+    MYSQL_CREATE_PERIOD_CATEGORY_STATS_TABLE("""
+                CREATE TABLE IF NOT EXISTS `odq_period_category_stats` (
+                    `player_uuid` CHAR(36) NOT NULL,
+                    `period` VARCHAR(16) NOT NULL,
+                    `category` VARCHAR(50) NOT NULL,
+                    `total_achieved_quests` INT NOT NULL,
+                    PRIMARY KEY (`player_uuid`, `period`, `category`)
+                );
+            """),
+
     MYSQL_SAVE_PLAYER("""
                 INSERT INTO `odq_player` (`player_uuid`, `player_timestamp`, `achieved_quests`, `total_achieved_quests`, `recent_rerolls`)
                 VALUES (?, ?, ?, ?, ?)
@@ -116,6 +155,45 @@ public enum SQLQuery {
                     `category` TEXT NOT NULL,
                     `total_achieved_quests` INTEGER NOT NULL,
                     PRIMARY KEY (`player_uuid`, `category`)
+                );
+            """),
+
+    SQLITE_CREATE_PERIOD_STATE_TABLE("""
+                CREATE TABLE IF NOT EXISTS `odq_period_state` (
+                    `player_uuid` TEXT NOT NULL,
+                    `period` TEXT NOT NULL,
+                    `player_timestamp` INTEGER NOT NULL,
+                    `achieved_quests` INTEGER NOT NULL,
+                    `total_achieved_quests` INTEGER NOT NULL,
+                    `recent_rerolls` INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY (`player_uuid`, `period`)
+                );
+            """),
+
+    SQLITE_CREATE_PERIOD_PROGRESSION_TABLE("""
+                CREATE TABLE IF NOT EXISTS `odq_period_progression` (
+                    `primary_key` INTEGER PRIMARY KEY AUTOINCREMENT,
+                    `player_uuid` TEXT NOT NULL,
+                    `period` TEXT NOT NULL,
+                    `player_quest_id` INTEGER NOT NULL,
+                    `quest_index` INTEGER NOT NULL,
+                    `category` TEXT NOT NULL,
+                    `advancement` INTEGER NOT NULL,
+                    `required_amount` INTEGER NOT NULL,
+                    `reward_amount` REAL,
+                    `is_achieved` INTEGER NOT NULL,
+                    `selected_required` INTEGER,
+                    UNIQUE (`player_uuid`, `period`, `player_quest_id`)
+                );
+            """),
+
+    SQLITE_CREATE_PERIOD_CATEGORY_STATS_TABLE("""
+                CREATE TABLE IF NOT EXISTS `odq_period_category_stats` (
+                    `player_uuid` TEXT NOT NULL,
+                    `period` TEXT NOT NULL,
+                    `category` TEXT NOT NULL,
+                    `total_achieved_quests` INTEGER NOT NULL,
+                    PRIMARY KEY (`player_uuid`, `period`, `category`)
                 );
             """),
 

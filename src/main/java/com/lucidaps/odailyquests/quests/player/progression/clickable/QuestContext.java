@@ -1,5 +1,6 @@
 package com.lucidaps.odailyquests.quests.player.progression.clickable;
 
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.inventory.ItemStack;
@@ -13,6 +14,7 @@ public class QuestContext {
     private final @Nullable Villager villager;
     private final @Nullable MerchantRecipe selectedRecipe;
     private final int quantity;
+    private final @Nullable QuestPeriod period;
 
     private QuestContext(Builder builder) {
         this.player = builder.player;
@@ -20,6 +22,7 @@ public class QuestContext {
         this.villager = builder.villager;
         this.selectedRecipe = builder.selectedRecipe;
         this.quantity = builder.quantity;
+        this.period = builder.period;
     }
 
     public static class Builder {
@@ -28,6 +31,7 @@ public class QuestContext {
         private @Nullable Villager villager;
         private @Nullable MerchantRecipe selectedRecipe;
         private int quantity = 1;
+        private @Nullable QuestPeriod period;
 
         public Builder(@NotNull Player player) {
             this.player = player;
@@ -35,6 +39,11 @@ public class QuestContext {
 
         public Builder clickedItem(@Nullable ItemStack clickedItem) {
             this.clickedItem = clickedItem;
+            return this;
+        }
+
+        public Builder period(@Nullable QuestPeriod period) {
+            this.period = period;
             return this;
         }
 
@@ -55,5 +64,6 @@ public class QuestContext {
     public @Nullable Villager getVillager() { return villager; }
     public @Nullable MerchantRecipe getSelectedRecipe() { return selectedRecipe; }
     public int getQuantity() { return quantity; }
+    public @Nullable QuestPeriod getPeriod() { return period; }
 
 }

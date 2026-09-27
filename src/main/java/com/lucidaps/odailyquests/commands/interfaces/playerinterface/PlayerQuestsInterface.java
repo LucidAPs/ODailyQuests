@@ -5,7 +5,9 @@ import com.lucidaps.odailyquests.commands.interfaces.playerinterface.items.ItemT
 import com.lucidaps.odailyquests.commands.interfaces.playerinterface.items.PlayerHead;
 import com.lucidaps.odailyquests.commands.interfaces.playerinterface.items.getters.InterfaceItemGetter;
 import com.lucidaps.odailyquests.configuration.functionalities.CompleteOnlyOnClick;
+import com.lucidaps.odailyquests.configuration.essentials.QuestPeriods;
 import com.lucidaps.odailyquests.files.implementations.PlayerInterfaceFile;
+import com.lucidaps.odailyquests.enums.QuestPeriod;
 import com.lucidaps.odailyquests.quests.player.PlayerQuests;
 import com.lucidaps.odailyquests.quests.player.QuestsManager;
 import com.lucidaps.odailyquests.quests.player.progression.Progression;
@@ -168,7 +170,11 @@ public class PlayerQuestsInterface extends InterfaceItemGetter {
      * @return the final rendered inventory, or {@code null} if generation failed
      */
     public Inventory getPlayerQuestsInterface(Player player) {
-        final Map<String, PlayerQuests> activeQuests = QuestsManager.getActiveQuests();
+        return getPlayerQuestsInterface(player, QuestPeriods.getDefaultPeriod());
+    }
+
+    public Inventory getPlayerQuestsInterface(Player player, QuestPeriod period) {
+        final Map<String, PlayerQuests> activeQuests = QuestsManager.getActiveQuests(period);
 
         if (!activeQuests.containsKey(player.getName())) {
             PluginLogger.error("Impossible to find the player " + player.getName() + " in the active quests.");
@@ -179,11 +185,14 @@ public class PlayerQuestsInterface extends InterfaceItemGetter {
 
         final PlayerQuests playerQuests = activeQuests.get(player.getName());
 
-        if (QuestLoaderUtils.isTimeToRenew(player, activeQuests)) return getPlayerQuestsInterface(player);
+        if (QuestLoaderUtils.isTimeToRenew(player, period)) return getPlayerQuestsInterface(player, period);
 
         final Map<AbstractQuest, Progression> questsMap = playerQuests.getQuests();
 
-        final Inventory playerQuestsInventoryIndividual = Bukkit.createInventory(new PlayerQuestsHolder(), size, TextFormatter.format(player, interfaceName));
+        final String title = TextFormatter.format(player, interfaceName)
+                .replace("%period%", period.getDisplayName())
+                .replace("%period_key%", period.getConfigKey());
+        final Inventory playerQuestsInventoryIndividual = Bukkit.createInventory(new PlayerQuestsHolder(period), size, title);
         playerQuestsInventoryIndividual.setContents(playerQuestsInventoryBase.getContents());
 
         if (!papiItems.isEmpty()) {
@@ -191,7 +200,7 @@ public class PlayerQuestsInterface extends InterfaceItemGetter {
         }
 
         /* load player head */
-        playerQuestsInventoryIndividual.setContents(playerHead.setPlayerHead(playerQuestsInventoryIndividual, player, size).getContents());
+        playerQuestsInventoryIndividual.setContents(playerHead.setPlayerHead(playerQuestsInventoryIndividual, player, playerQuests, size).getContents());
 
         /* load quests */
         applyQuestsItems(player, questsMap, playerQuests, playerQuestsInventoryIndividual);
@@ -318,6 +327,12 @@ public class PlayerQuestsInterface extends InterfaceItemGetter {
             if (elementSection == null) {
                 configurationError(element, "item", "The item is not defined.");
                 continue;
+            }
+
+            final String periodKey = elementSection.getString("period");
+            if (periodKey != null) {
+                final QuestPeriod itemPeriod = QuestPeriod.fromString(periodKey).orElse(null);
+                if (itemPeriod == null || !QuestPeriods.isEnabled(itemPeriod)) continue;
             }
 
             final ConfigurationSection itemSection = elementSection.getConfigurationSection("item");
